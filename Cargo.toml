@@ -1,0 +1,56 @@
+[package]
+name = "axonos-kernel"
+version = "0.1.0"
+edition = "2024"
+authors = ["Denis Yermakou <denis@axonos.org>"]
+description = "Safety-critical BCI microkernel for Cortex-M bare-metal Rust"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/AxonOS-org/axonos-kernel"
+keywords = ["bci", "rtos", "real-time", "rust", "embedded"]
+categories = ["embedded", "no-std", "os"]
+rust-version = "1.85.0"
+
+[features]
+default = ["cortex-m4f"]
+cortex-m4f = []
+cortex-m33 = ["trustzone"]
+trustzone = []
+kani = []
+
+[dependencies]
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
+cortex-m-rt = "0.7"
+panic-halt = "0.2"
+heapless = "0.8"
+bitflags = "2.6"
+const_format = "0.2"
+micromath = "2.1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[profile.dev]
+opt-level = 1
+lto = false
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+debug = true
+panic = "abort"
+
+[[example]]
+name = "basic_pipeline"
+required-features = ["cortex-m4f"]
+
+[[example]]
+name = "dualcore_demo"
+required-features = ["cortex-m4f"]
+
+[[example]]
+name = "consent_demo"
+required-features = ["cortex-m33", "trustzone"]
+
+[package.metadata.docs.rs]
+targets = ["thumbv7em-none-eabihf", "thumbv8m.main-none-eabihf"]
