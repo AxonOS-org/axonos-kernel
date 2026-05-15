@@ -1,0 +1,32 @@
+[package]
+name = "axonos-spsc"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0 OR MIT"
+description = "A single-producer, single-consumer ring buffer for AxonOS. #![no_std], #![forbid(unsafe_code)] outside the documented payload path. Verified by Kani BMC."
+repository = "https://github.com/AxonOS-org/axonos-spsc"
+keywords = ["no-std", "embedded", "spsc", "ring-buffer", "lock-free"]
+categories = ["data-structures", "embedded", "no-std", "concurrency"]
+
+[features]
+default = []
+# Enable property-based tests against std-collections reference oracle
+std = []
+
+# proptest can be enabled when toolchain is Rust 1.85+ (current SDK MSRV).
+# In this minimal build we ship with unit tests only.
+[dev-dependencies]
+
+[lib]
+name = "axonos_spsc"
+path = "src/lib.rs"
+
+[package.metadata.kani]
+flags = ["--default-unwind", "8"]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+debug = true  # required for accurate stack-frame info under WCET analysis

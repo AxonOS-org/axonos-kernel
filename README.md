@@ -1,157 +1,180 @@
-# AxonOS Kernel
+# AxonOS kernels
 
-[![License: Apache-2.0 OR MIT](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](LICENSE-APACHE)
-[![Rust: 1.85.0+](https://img.shields.io/badge/rust-1.85.0%2B-orange.svg)](https://www.rust-lang.org)
-[![No Std](https://img.shields.io/badge/no__std-supported-success.svg)]()
-[![Unsafe: Forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)]()
+The foundational primitives of the AxonOS real-time microkernel for
+brain-computer interfaces, factored as independent `#![no_std]` Rust
+crates with formal verification harnesses.
 
-> **Safety-critical `#![no_std]` Rust microkernel for brain-computer interface systems**
+This repository is the **kernel-side** counterpart to
+[`axonos-sdk`](https://github.com/AxonOS-org/axonos-sdk) (the application
+SDK) and [`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs) (the
+engineering specifications). Each crate here is publishable on its own
+and reviewable in isolation. The kernel itself is the result of composing
+them with hardware-specific glue.
 
-AxonOS is a bare-metal real-time operating system for Cortex-M4F and Cortex-M33 targets, designed for closed-loop neurostimulation and motor-imagery BCI applications.
+## Why three crates, not one kernel binary
 
-## Key Features
+A safety-critical kernel is the single subtlest piece of software in any
+system. Reviewability scales inversely with size. We separate concerns
+along the three orthogonal axes of a real-time scheduler:
 
-- **EDF Scheduling**: Earliest-Deadline-First with Liu-Layland schedulability proof
-- **Zero-Copy Signal Path**: SPSC ring buffer from ADC DMA to classifier
-- **Capability Isolation**: Structural data minimisation at type-system level
-- **Dual-Core Contract**: Formal timing contract between M4F DSP and A53 app core
-- **Forbidden Unsafe**: `#![forbid(unsafe_code)]` except two targeted blocks in SPSC
+| Crate | Responsibility | Axis |
+|:---|:---|:---|
+| [`axonos-spsc`](./axonos-spsc) | Inter-process communication between real-time and application domains | **Data path** |
+| [`axonos-scheduler`](./axonos-scheduler) | Earliest-deadline-first admission and selection | **Time path** |
+| [`axonos-capability`](./axonos-capability) | Application isolation, manifest verification, privacy bounds | **Policy path** |
 
-## Evidence Levels
+Each axis can be audited, fuzz-tested, and formally verified independently
+of the others. Each is small enough to be read top-to-bottom in one
+sitting. None contains hardware-specific code; the full AxonOS kernel
+combines them with architecture-bound layers (timer drivers, interrupt
+handlers, MPU configuration) that live elsewhere.
 
-Every quantitative claim carries a mandatory evidence label:
+This factoring follows the seL4 tradition: the formally verifiable core
+is a small set of pure-Rust algorithmic primitives, and the
+non-verifiable hardware-bound parts are clearly demarcated.
 
-| Level | Method | Hardware |
-|-------|--------|----------|
-| [L1] | Instruction-count from assembly | None |
-| [L2] | DWT cycle counter | STM32F407 |
-| [L3] | Oscilloscope (Saleae Logic Pro 16) | STM32H573 |
+## Engineering principles
 
-## Quick Start
+These rules govern technical decisions in this repository and are
+visible in every artifact:
+
+1. **No claim above its evidence level.** Measurements are reported as
+   measurements, derivations as derivations, predictions as predictions.
+2. **No `unsafe` in reviewable modules.** Where unsafe is unavoidable
+   (`axonos-spsc`'s payload path), it is exactly two operations, each
+   guarded by a Kani-verified invariant. Everywhere else,
+   `#![forbid(unsafe_code)]`.
+3. **No heap allocation on the hot path.** Static buffers, const-generic
+   sizing, fixed-point arithmetic.
+4. **No silent recovery from inconsistent state.** Errors surface as
+   `Result` types, never as defaults.
+5. **No proprietary lock-in via the kernel.** All crates are dual-licensed
+   under Apache-2.0 OR MIT. The wire formats are published as engineering
+   RFCs under CC-BY-SA-4.0.
+
+## Build and test
 
 ```bash
-# Clone repository
-git clone https://github.com/AxonOS-org/axonos-kernel.git
-cd axonos-kernel
+# Stable Rust 1.75+ for the crates themselves
+cargo test --workspace
 
-# Build for STM32F407 (Cortex-M4F)
-cargo build --target thumbv7em-none-eabihf --features cortex-m4f
+# Embedded targets
+rustup target add thumbv7em-none-eabihf       # Cortex-M4F  — STM32F407
+rustup target add thumbv8m.main-none-eabihf   # Cortex-M33  — STM32H573
+cargo build --workspace --release --target thumbv7em-none-eabihf
+cargo build --workspace --release --target thumbv8m.main-none-eabihf
 
-# Build for STM32H573 (Cortex-M33 with TrustZone)
-cargo build --target thumbv8m.main-none-eabihf --features cortex-m33,trustzone
-
-# Run tests on host
-cargo test --lib
-
-# Run Kani proofs
-cargo kani --features kani
-
-# Build examples
-cargo build --example basic_pipeline --target thumbv7em-none-eabihf
+# Lint
+rustup component add clippy
+cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-## Architecture
+## Formal verification
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Application Layer                     │
-│  (Cortex-A53: Session, BLE/Wi-Fi, WASM sandbox)           │
-├─────────────────────────────────────────────────────────────┤
-│                      IPC Contract (DC1-DC6)               │
-│         SPSC Ring Buffer │ Heartbeat │ Attestation        │
-├─────────────────────────────────────────────────────────────┤
-│                      AxonOS Kernel (Cortex-M4F)             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │ EDF Scheduler│  │ Signal Pipe │  │ Capability Model │  │
-│  │  (U≤0.25)   │  │ (640µs WCET)│  │  (Theorem 8.3)   │  │
-│  └─────────────┘  └─────────────┘  └─────────────────┘  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │ Consent FSM │  │  Interlock  │  │  Attestation     │  │
-│  │  (DC5)      │  │  (Safe-idle)│  │  (ATECC608B)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│                      Hardware Abstraction                    │
-│  ADS1299 (ADC) │ nRF52840 (BLE) │ ISO7741 (Isolation)     │
-└─────────────────────────────────────────────────────────────┘
+Each crate ships with a `kani-proofs/` sub-package containing BMC
+harnesses. To reproduce:
+
+```bash
+cargo install --locked kani-verifier
+cargo kani setup
+
+cd axonos-spsc/kani-proofs       && cargo kani
+cd axonos-scheduler/kani-proofs  && cargo kani
+cd axonos-capability/kani-proofs && cargo kani
 ```
 
-## Schedulability Guarantees
+The harnesses are listed in each crate's README. A summary:
 
-| Metric | Value | Evidence |
-|--------|-------|----------|
-| Admission ceiling | U_max = 0.25 | [L1] |
-| Binding utilisation | U^L2 = 0.2181 | [L2] |
-| WCET (signal pipeline) | C_1^L2 = 818 µs | [L2] |
-| Busy period | L = 972 µs | [L2] |
-| Deadline slack | S_1 = 3028 µs | [L1] |
-| EDF jitter σ | 2.1 µs | [L2] |
-| Zero deadline misses | 0 / 10.8×10^6 epochs | [L2] |
+| Crate | Harness count | Domain |
+|:---|---:|:---|
+| `axonos-spsc` | 5 | SPSC ring buffer correctness, FIFO order, wait-freedom |
+| `axonos-scheduler` | 5 | EDF admission soundness, deadline selection, tie-breaking |
+| `axonos-capability` | 7 | Subset relation, manifest soundness/completeness, monotone bound |
 
-## Documentation
+**Total: 17 formal harnesses.** All are runnable against the published
+source via `cargo kani`. No proof is taken on trust.
 
-- [Architecture](docs/ARCHITECTURE.md) — System overview and module hierarchy
-- [Scheduler](docs/SCHEDULER.md) — EDF schedulability analysis
-- [Signal Path](docs/SIGNAL_PATH.md) — Zero-copy pipeline specification
-- [IPC Contract](docs/IPC_CONTRACT.md) — DC1-DC6 dual-core contract
-- [Capability Model](docs/CAPABILITY_MODEL.md) — Structural isolation and privacy bounds
-- [Validation](docs/VALIDATION.md) — L1/L2/L3 evidence taxonomy
+## Status of measurement-backed claims
 
-## Safety Properties
+This repository contains **derived** quantitative claims (computed from
+algorithms in the crates themselves) and **specification** quantitative
+claims (cited from primary hardware documentation). It does not contain
+runtime-measured claims from the AxonOS reference hardware; those will
+be published in Phase 1 (Q2 2026) per the falsification protocol stated
+in the preprint.
 
-- **Theorem 6.3**: SPSC sequence-number correctness (Release-Acquire)
-- **Theorem 8.3**: Structural data minimisation (no prohibited types reach apps)
-- **Theorem 9.1**: Mutual information bound ≤ 140.85 bits/s
-- **Theorem 9.3**: Min-entropy residual ≥ H_∞(X) - 7.49 bits
+Specifically:
+- `axonos-scheduler` tests compute that the AxonOS BCI pipeline task set
+  admits at `U=0.174` and has a response-time bound of `R=796 µs`. These
+  numbers are derived in code and match the preprint.
+- `axonos-capability` tests compute that the full-catalogue information
+  bound is `≤ 140.85 bits/s`. This number is derived in code and matches
+  the preprint.
+- No claim from this repository says "we measured X µs on a real board."
+  Such claims are reserved for the Phase 1 measurement publication.
 
-## Kani Verification
+## Repository layout
 
-Three bounded proofs for SPSC protocol:
-- **K1**: No data race (unwind: 8, time: 4.2s)
-- **K2**: Wait-freedom (unwind: 4, time: 1.1s)
-- **K3**: Memory ordering / payload integrity (unwind: 2, time: 0.8s)
+```
+axonos-kernels/
+├── Cargo.toml                       Workspace manifest
+├── README.md                        This file
+├── .github/workflows/ci.yml         CI matrix: test, clippy, fmt, no_std, Miri, Kani, audit
+├── axonos-spsc/
+│   ├── Cargo.toml
+│   ├── README.md
+│   ├── src/lib.rs
+│   ├── kani-proofs/                 K1–K5 BMC harnesses
+│   └── LICENSE-{APACHE,MIT}
+├── axonos-scheduler/
+│   ├── Cargo.toml
+│   ├── README.md
+│   ├── src/lib.rs
+│   ├── kani-proofs/                 S1–S5 BMC harnesses
+│   └── LICENSE-{APACHE,MIT}
+└── axonos-capability/
+    ├── Cargo.toml
+    ├── README.md
+    ├── src/lib.rs
+    ├── kani-proofs/                 C1–C7 BMC harnesses
+    └── LICENSE-{APACHE,MIT}
+```
 
-Three bounded proofs for heartbeat FSM (DC5):
-- **K1**: Safety (unwind: 12, time: 2.3s)
-- **K2**: Liveness (unwind: 12, time: 1.8s)
-- **K3**: Monotonicity (unwind: 8, time: 0.9s)
+## Roadmap
 
-## Regulatory Alignment
+**Now.** Three foundational crates: SPSC, scheduler, capability. All
+publishable, all `#![no_std]`, all formally verified at the relevant
+properties.
 
-Preliminary IEC 62304 Class C alignment (pre-clinical engineering phase):
+**Next.** Three integration crates planned, each in the same discipline:
 
-| Requirement | AxonOS Artifact | Status |
-|-------------|----------------|--------|
-| §5.1 Development plan | RFC-0001 to RFC-0005 | Planned |
-| §5.3 Architectural design | RFC-0004 | Draft complete |
-| §5.5 Unit implementation | Rust + clippy + CI | CI passing |
-| §5.6 Verification | Unit-test coverage >90% | Partial |
-| §5.7 Integration testing | 15/15 interop vectors | Complete |
-| §5.8 System testing | Phase 1 GPIO test | [pending] Q2 2026 |
+- `axonos-time` — monotonic clock, `Instant`/`Micros` arithmetic,
+  DWT cycle-counter integration via trait abstraction.
+- `axonos-intent` — typed event payloads matching RFC-0006's wire
+  format. Conformance test vectors.
+- `axonos-core` — bare-metal Cortex-M4F binary integrating the above
+  into a runnable demonstration. The first **kernel**, not library.
 
-## Related Projects
+**Phase 1 (Q2 2026).** GPIO-instrumented WCRT measurement on STM32H573
+reference fixture. Falsification protocol P1–P5 executed and published
+regardless of outcome.
 
-- [axonos-sdk](https://github.com/AxonOS-org/axonos-sdk) — Application-facing SDK
-- [axonos-rfcs](https://github.com/AxonOS-org/axonos-rfcs) — Engineering RFCs
-- [axonos-consent](https://github.com/AxonOS-org/axonos-consent) — MMP Consent Extension
+**Phase 2 (Q3–Q4 2026).** First 8-channel clinical kit deployment with
+the partner ALS rehabilitation centre.
+
+**Phase 3 (2027).** FDA Pre-Submission. Ferrocene-qualified toolchain
+integration. ISO 14971 risk management file.
 
 ## License
 
-Dual-licensed under [Apache-2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT) at your option.
+Dual-licensed: Apache-2.0 OR MIT. See each crate for licence files.
 
-## Citation
+## Contributing
 
-```bibtex
-@article{yermakou2026axonos,
-  title={AxonOS: Analytical Real-Time Schedulability, Structural Capability Isolation, 
-         and Empirical Validation of a Safety-Critical Brain Computer Interface Microkernel},
-  author={Yermakou, Denis},
-  journal={arXiv preprint},
-  year={2026}
-}
-```
+- Security disclosures: `security@axonos.org`
+- General correspondence: `info@axonos.org`
+- Partnership and investment: `connect@axonos.org`
 
-## Contact
+---
 
-Denis Yermakou — denis@axonos.org
-
-AxonOS, Singapore
+axonos.org · medium.com/@AxonOS · info@axonos.org · Zurich · Berlin · Milano · San Mateo · Singapore

@@ -1,0 +1,14 @@
+[package]
+name = "axonos-capability-kani"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "kani-harnesses"
+path = "src/main.rs"
+
+[dependencies]
+axonos-capability = { path = ".." }
+
+[workspace]
