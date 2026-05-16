@@ -1,4 +1,4 @@
-name: AxonOS Kernel CI
+name: CI
 
 on:
   push:
@@ -6,56 +6,38 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Nightly Kani + audit
-    - cron: '0 2 * * *'
+    # Weekly Kani + audit, Mondays 02:00 UTC
+    - cron: '0 2 * * 1'
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
   RUST_BACKTRACE: 1
 
+# Cancel superseded runs on the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # ─── 1. Unit Tests (Stable) ──────────────────────────────────────────────
-  test-stable:
-    name: Test Stable (ubuntu)
-    runs-on: ubuntu-latest
+
+  # ── 1. Tests on stable, all three host OS ────────────────────────────────
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --workspace --all-targets
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --all-features
 
-  # ─── 2. macOS Host Tests ─────────────────────────────────────────────────
-  test-macos:
-    name: Test Stable (macOS)
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --workspace --all-targets
-
-  # ─── 3. Windows Host Tests ────────────────────────────────────────────────
-  test-windows:
-    name: Test Stable (Windows)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --workspace --all-targets
-
-  # ─── 4. Clippy (Deny Warnings) ───────────────────────────────────────────
-  clippy-deny:
-    name: Clippy Deny Warnings
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-
-  # ─── 5. Format Check ─────────────────────────────────────────────────────
-  fmt-check:
-    name: Format Check
+  # ── 2. Format check ──────────────────────────────────────────────────────
+  fmt:
+    name: rustfmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,31 +46,63 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
 
-  # ─── 6. no_std Build thumbv7em-none-eabihf (Cortex-M4F) ──────────────────
-  no-std-thumbv7em:
-    name: no_std Build (thumbv7em-none-eabihf)
+  # ── 3. Clippy ─────────────────────────────────────────────────────────────
+  # clippy::all is deny; clippy::pedantic is warn (informational, does not
+  # fail the build). Tighten over time as the codebase matures.
+  clippy:
+    name: clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: thumbv7em-none-eabihf
-      - run: cargo build --workspace --release --target thumbv7em-none-eabihf
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-  # ─── 7. no_std Build thumbv8m.main-none-eabihf (Cortex-M33) ───────────────
-  no-std-thumbv8m:
-    name: no_std Build (thumbv8m.main-none-eabihf)
+  # ── 4. MSRV check (rust-version pinned in Cargo.toml) ─────────────────────
+  msrv:
+    name: MSRV (1.75)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.75.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace --all-features
+
+  # ── 5. no_std build, two embedded targets ────────────────────────────────
+  no_std:
+    name: no_std (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - thumbv7em-none-eabihf      # Cortex-M4F (STM32F407)
+          - thumbv8m.main-none-eabihf  # Cortex-M33 (STM32H573)
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: thumbv8m.main-none-eabihf
-      - run: cargo build --workspace --release --target thumbv8m.main-none-eabihf
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --workspace --release --target ${{ matrix.target }}
 
-  # ─── 8. Miri (unsafe check for axonos-spsc) ──────────────────────────────
-  miri-spsc:
-    name: Miri Check (axonos-spsc)
+  # ── 6. Documentation ─────────────────────────────────────────────────────
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --workspace --no-deps --all-features
+
+  # ── 7. Miri (undefined behaviour detection on the unsafe surface) ────────
+  miri:
+    name: miri (axonos-spsc)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,49 +111,34 @@ jobs:
           components: miri
       - run: cargo miri test -p axonos-spsc
 
-  # ─── 9. Kani BMC — axonos-spsc ───────────────────────────────────────────
-  kani-spsc:
-    name: Kani BMC (axonos-spsc)
+  # ── 8. Kani BMC per crate ────────────────────────────────────────────────
+  # Each kani-proofs sub-package is standalone (its own [workspace] table)
+  # so cargo kani can build it independently of the parent workspace.
+  kani:
+    name: kani (${{ matrix.crate }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - axonos-spsc
+          - axonos-scheduler
+          - axonos-capability
+          - axonos-time
+          - axonos-intent
     steps:
       - uses: actions/checkout@v4
       - uses: model-checking/kani-github-action@v1
         with:
-          working-directory: axonos-spsc/kani-proofs
-          args: "--default-unwind 8"
+          working-directory: ${{ matrix.crate }}/kani-proofs
 
-  # ─── 10. Kani BMC — axonos-scheduler ─────────────────────────────────────
-  kani-scheduler:
-    name: Kani BMC (axonos-scheduler)
+  # ── 9. cargo-deny (licences, advisories, sources) ────────────────────────
+  deny:
+    name: cargo-deny
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: model-checking/kani-github-action@v1
-        with:
-          working-directory: axonos-scheduler/kani-proofs
-
-  # ─── 11. Kani BMC — axonos-capability ────────────────────────────────────
-  kani-capability:
-    name: Kani BMC (axonos-capability)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: model-checking/kani-github-action@v1
-        with:
-          working-directory: axonos-capability/kani-proofs
-
-          # ─── 12. Docs + Audit + MSRV ─────────────────────────────────────────────
-  docs-audit-msrv:
-    name: Docs, Audit & MSRV
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rust-docs
-      - run: cargo doc --workspace --no-deps
       - uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: check
-      - uses: dtolnay/rust-toolchain@1.75.0
-      - run: cargo check --workspace
+          arguments: --all-features
