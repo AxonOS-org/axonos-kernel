@@ -23,6 +23,7 @@ along the three orthogonal axes of a real-time scheduler:
 | [`axonos-scheduler`](./axonos-scheduler) | Earliest-deadline-first admission and selection | **Time path** |
 | [`axonos-capability`](./axonos-capability) | Application isolation, manifest verification, privacy bounds | **Policy path** |
 | [`axonos-time`](./axonos-time) | Monotonic clock abstraction, saturating arithmetic | **Clock path** |
+| [`axonos-intent`](./axonos-intent) | RFC-0006 wire format encoder/decoder, conformance vectors | **Wire path** |
 
 Each axis can be audited, fuzz-tested, and formally verified independently
 of the others. Each is small enough to be read top-to-bottom in one
@@ -92,8 +93,9 @@ The harnesses are listed in each crate's README. A summary:
 | `axonos-scheduler` | 5 | EDF admission soundness, deadline selection, tie-breaking |
 | `axonos-capability` | 7 | Subset relation, manifest soundness/completeness, monotone bound |
 | `axonos-time` | 6 | Monotonic arithmetic, saturating overflow, clock observability |
+| `axonos-intent` | 5 | Round-trip identity, strict decoder rejection of bad inputs |
 
-**Total: 23 formal harnesses.** All are runnable against the published
+**Total: 28 formal harnesses.** All are runnable against the published
 source via `cargo kani`. No proof is taken on trust.
 
 ## Status of measurement-backed claims
@@ -140,27 +142,33 @@ axonos-kernels/
 │   ├── src/lib.rs
 │   ├── kani-proofs/                 C1–C7 BMC harnesses
 │   └── LICENSE-{APACHE,MIT}
-└── axonos-time/
+├── axonos-time/
+│   ├── Cargo.toml
+│   ├── README.md
+│   ├── src/lib.rs
+│   ├── kani-proofs/                 T1–T6 BMC harnesses
+│   └── LICENSE-{APACHE,MIT}
+└── axonos-intent/
     ├── Cargo.toml
     ├── README.md
     ├── src/lib.rs
-    ├── kani-proofs/                 T1–T6 BMC harnesses
+    ├── kani-proofs/                 I1–I5 BMC harnesses
     └── LICENSE-{APACHE,MIT}
 ```
 
 ## Roadmap
 
-**Now.** Four foundational crates: SPSC, scheduler, capability, time.
-All publishable, all `#![no_std]`, all formally verified at the
-relevant properties. Zero dependencies between crates other than
-`axonos-time` providing the clock abstraction.
+**Now.** Five foundational crates: SPSC, scheduler, capability, time,
+intent. All publishable, all `#![no_std]`, all formally verified at the
+relevant properties. The dependency graph is acyclic: `axonos-intent`
+depends on `axonos-time` and `axonos-capability`; everything else is
+standalone.
 
-**Next.** Two integration crates planned, each in the same discipline:
+**Next.** One integration crate planned:
 
-- `axonos-intent` — typed event payloads matching RFC-0006's wire
-  format. Conformance test vectors.
-- `axonos-core` — bare-metal Cortex-M4F binary integrating the above
-  into a runnable demonstration. The first **kernel**, not library.
+- `axonos-core` — bare-metal Cortex-M4F binary integrating the five
+  foundational crates into a runnable demonstration on a 4-millisecond
+  tick. This is the first **kernel binary**, not a library.
 
 **Phase 1 (Q2 2026).** GPIO-instrumented WCRT measurement on STM32H573
 reference fixture. Falsification protocol P1–P5 executed and published

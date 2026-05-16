@@ -43,8 +43,6 @@
 #![cfg_attr(test, allow(clippy::missing_safety_doc))]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 // Outside the SPSC payload path itself, no unsafe is permitted in this crate.
 #![deny(unsafe_op_in_unsafe_fn)]

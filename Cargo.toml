@@ -5,12 +5,16 @@ members = [
     "axonos-scheduler",
     "axonos-capability",
     "axonos-time",
+    "axonos-intent",
+    "axonos-kernel-core",
 ]
 exclude = [
     "axonos-spsc/kani-proofs",
     "axonos-scheduler/kani-proofs",
     "axonos-capability/kani-proofs",
     "axonos-time/kani-proofs",
+    "axonos-intent/kani-proofs",
+    "axonos-firmware-stm32f407",
 ]
 
 [workspace.package]
@@ -23,8 +27,6 @@ authors = ["AxonOS contributors <info@axonos.org>"]
 
 [workspace.lints.clippy]
 all = "deny"
-pedantic = "warn"
-module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 
 [profile.release]

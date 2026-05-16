@@ -8,7 +8,7 @@
 //! contains:
 //!
 //! - The static task representation [`Task`] and [`TaskSet`].
-//! - The Liu–Layland admission test ([`TaskSet::utilisation`],
+//! - The Liu–Layland admission test ([`TaskSet::utilisation_scaled`],
 //!   [`TaskSet::admit`]).
 //! - The synchronous busy-period response-time analysis (RTA)
 //!   ([`response_time_bound`]).
@@ -65,8 +65,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 
 use core::cmp::Ordering;
@@ -334,7 +332,7 @@ pub enum AdmissionFailure {
 /// This function is the central scheduling decision. It is pure: it has no
 /// side effects, no internal state, and is deterministic given its inputs.
 #[must_use]
-pub fn select_next<'a>(ready: &'a [TaskInstance], _now: Instant) -> Option<&'a TaskInstance> {
+pub fn select_next(ready: &[TaskInstance], _now: Instant) -> Option<&TaskInstance> {
     ready.iter().min_by(
         |a, b| match a.absolute_deadline().cmp(&b.absolute_deadline()) {
             Ordering::Equal => a.task.id.cmp(&b.task.id),

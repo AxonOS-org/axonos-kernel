@@ -18,9 +18,3 @@ std = []
 [lib]
 name = "axonos_scheduler"
 path = "src/lib.rs"
-
-[profile.release]
-codegen-units = 1
-lto = "fat"
-panic = "abort"
-debug = true

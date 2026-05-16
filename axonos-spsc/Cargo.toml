@@ -24,9 +24,3 @@ path = "src/lib.rs"
 
 [package.metadata.kani]
 flags = ["--default-unwind", "8"]
-
-[profile.release]
-codegen-units = 1
-lto = "fat"
-panic = "abort"
-debug = true  # required for accurate stack-frame info under WCET analysis

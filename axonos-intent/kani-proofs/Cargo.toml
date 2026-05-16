@@ -1,0 +1,16 @@
+[package]
+name = "axonos-intent-kani"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "kani-harnesses"
+path = "src/main.rs"
+
+[dependencies]
+axonos-intent = { path = ".." }
+axonos-time = { path = "../../axonos-time" }
+axonos-capability = { path = "../../axonos-capability" }
+
+[workspace]

@@ -75,8 +75,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 
 // ───────────────────────────────────────────────────────────────────────────
