@@ -100,7 +100,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo doc --workspace --no-deps --all-features
 
-  # ── 7. Miri (undefined behaviour detection on the unsafe surface) ────────
+    # ── 7. Miri (undefined behaviour detection on the unsafe surface) ────────
   miri:
     name: miri (axonos-spsc)
     runs-on: ubuntu-latest
@@ -109,7 +109,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
-      - run: cargo miri test -p axonos-spsc
+      - uses: Swatinem/rust-cache@v2   # ← опционально, ускорит сборку
+      - run: cargo +nightly miri test -p axonos-spsc
+
 
   # ── 8. Kani BMC per crate ────────────────────────────────────────────────
   # Each kani-proofs sub-package is standalone (its own [workspace] table)
