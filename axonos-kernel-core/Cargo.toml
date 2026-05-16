@@ -1,6 +1,6 @@
 [package]
 name = "axonos-kernel-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
@@ -15,11 +15,11 @@ default = []
 std = ["axonos-time/std", "axonos-intent/std"]
 
 [dependencies]
-axonos-spsc = { version = "0.1.1", path = "../axonos-spsc" }
-axonos-scheduler = { version = "0.1.1", path = "../axonos-scheduler" }
-axonos-capability = { version = "0.1.1", path = "../axonos-capability" }
-axonos-time = { version = "0.1.1", path = "../axonos-time" }
-axonos-intent = { version = "0.1.1", path = "../axonos-intent" }
+axonos-spsc = { version = "0.1.2", path = "../axonos-spsc" }
+axonos-scheduler = { version = "0.1.2", path = "../axonos-scheduler" }
+axonos-capability = { version = "0.1.2", path = "../axonos-capability" }
+axonos-time = { version = "0.1.2", path = "../axonos-time" }
+axonos-intent = { version = "0.1.2", path = "../axonos-intent" }
 
 [lib]
 name = "axonos_kernel_core"

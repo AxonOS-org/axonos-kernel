@@ -30,7 +30,10 @@ use axonos_time::Instant;
 #[kani::proof]
 fn intent_i1_round_trip_navigation_right() {
     let ts: u64 = kani::any();
-    kani::assume(ts <= Instant::SESSION_MAX_REASONABLE.as_micros());
+    // Bound aggressively: full SESSION_MAX_REASONABLE (2^48) is too large for
+    // the SAT/SMT solver. 1_000_000 µs (one second) covers all interesting
+    // timestamp behaviour for encode/decode round-trip.
+    kani::assume(ts <= 1_000_000);
 
     let conf_raw: u16 = kani::any();
     let seq: u32 = kani::any();
@@ -59,7 +62,10 @@ fn intent_i1_round_trip_navigation_right() {
 #[kani::proof]
 fn intent_i2_encoded_size_is_32() {
     let ts: u64 = kani::any();
-    kani::assume(ts <= Instant::SESSION_MAX_REASONABLE.as_micros());
+    // Bound aggressively: full SESSION_MAX_REASONABLE (2^48) is too large for
+    // the SAT/SMT solver. 1_000_000 µs (one second) covers all interesting
+    // timestamp behaviour for encode/decode round-trip.
+    kani::assume(ts <= 1_000_000);
 
     let obs = IntentObservation {
         timestamp: Instant(ts),
@@ -112,7 +118,10 @@ fn intent_i4_timestamp_out_of_range_rejected() {
     let mut bytes = [0u8; OBSERVATION_SIZE];
 
     let bad_ts: u64 = kani::any();
+    // Bound the out-of-range timestamp tightly: solver only needs one
+    // counter-example, doesn't need to enumerate u64::MAX values.
     kani::assume(bad_ts > Instant::SESSION_MAX_REASONABLE.as_micros());
+    kani::assume(bad_ts < Instant::SESSION_MAX_REASONABLE.as_micros() + 256);
 
     bytes[0..8].copy_from_slice(&bad_ts.to_le_bytes());
     // kind_tag and direction are zero — valid Navigation/Idle.

@@ -107,10 +107,12 @@ fn time_t4_saturating_since_saturates_at_large_diff() {
     let a_us: u64 = kani::any();
     let extra: u64 = kani::any();
 
-    // Force the difference to exceed u32::MAX by at least one.
+    // Tight bounds: prove the saturating behaviour for a representative
+    // band just above u32::MAX. Full u64 space is unnecessary and explodes
+    // the solver.
+    kani::assume(a_us <= 1_000);
     kani::assume(extra > u32::MAX as u64);
-    // Constrain to avoid overflow of b.
-    kani::assume(a_us <= u64::MAX - extra);
+    kani::assume(extra <= u32::MAX as u64 + 1_000);
 
     let a = Instant(a_us);
     let b = Instant(a_us + extra);

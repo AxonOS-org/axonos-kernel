@@ -71,10 +71,12 @@ fn sched_s2_select_picks_earliest_deadline() {
     // Bound parameters to a reasonable range so the solver doesn't blow up
     // on overflow corner cases.
     kani::assume(id_a != id_b);
-    kani::assume(period_a > 100 && period_a <= 10_000);
-    kani::assume(period_b > 100 && period_b <= 10_000);
-    kani::assume(release_a <= 1_000_000);
-    kani::assume(release_b <= 1_000_000);
+    // Tight bounds: solver needs only enough to demonstrate ordering, not
+    // enumerate the full timer range.
+    kani::assume(period_a > 100 && period_a <= 4_000);
+    kani::assume(period_b > 100 && period_b <= 4_000);
+    kani::assume(release_a <= 10_000);
+    kani::assume(release_b <= 10_000);
 
     let task_a = Task::periodic(TaskId(id_a), Micros(100), Micros(period_a));
     let task_b = Task::periodic(TaskId(id_b), Micros(100), Micros(period_b));

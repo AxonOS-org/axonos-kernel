@@ -1,6 +1,6 @@
 [package]
 name = "axonos-firmware-stm32f407"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
@@ -23,12 +23,12 @@ cortex-m-rt = "0.7"
 panic-halt = "0.2"
 
 # AxonOS workspace dependencies
-axonos-kernel-core = { version = "0.1.1", path = "../axonos-kernel-core" }
-axonos-time = { version = "0.1.1", path = "../axonos-time" }
-axonos-scheduler = { version = "0.1.1", path = "../axonos-scheduler" }
-axonos-capability = { version = "0.1.1", path = "../axonos-capability" }
-axonos-intent = { version = "0.1.1", path = "../axonos-intent" }
-axonos-spsc = { version = "0.1.1", path = "../axonos-spsc" }
+axonos-kernel-core = { version = "0.1.2", path = "../axonos-kernel-core" }
+axonos-time = { version = "0.1.2", path = "../axonos-time" }
+axonos-scheduler = { version = "0.1.2", path = "../axonos-scheduler" }
+axonos-capability = { version = "0.1.2", path = "../axonos-capability" }
+axonos-intent = { version = "0.1.2", path = "../axonos-intent" }
+axonos-spsc = { version = "0.1.2", path = "../axonos-spsc" }
 
 [[bin]]
 name = "axonos-firmware-stm32f407"
