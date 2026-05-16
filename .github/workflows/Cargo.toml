@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = [
+    "axonos-spsc",
+    "axonos-scheduler",
+    "axonos-capability",
+    "axonos-time",
+]
+exclude = [
+    "axonos-spsc/kani-proofs",
+    "axonos-scheduler/kani-proofs",
+    "axonos-capability/kani-proofs",
+    "axonos-time/kani-proofs",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/AxonOS-org/axonos-kernels"
+authors = ["AxonOS contributors <info@axonos.org>"]
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "warn"
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+debug = true
+opt-level = "s"
+
+[profile.bench]
+codegen-units = 1
+lto = "fat"
+debug = true
