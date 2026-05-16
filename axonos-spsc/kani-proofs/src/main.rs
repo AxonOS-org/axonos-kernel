@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2026 Denis Yermakou <denis@axonos.org>
+// Part of the AxonOS project — https://github.com/AxonOS-org
+
 //! # Kani bounded-model-checking harnesses
 //!
 //! These harnesses verify the SPSC ring buffer's safety and correctness

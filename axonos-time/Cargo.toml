@@ -1,9 +1,10 @@
 [package]
 name = "axonos-time"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
+authors = ["Denis Yermakou <denis@axonos.org>"]
 description = "Monotonic time abstraction for AxonOS. Hardware-independent trait, saturating fixed-point arithmetic, no allocator, no panics on the hot path. #![no_std], #![forbid(unsafe_code)], zero dependencies."
 repository = "https://github.com/AxonOS-org/axonos-kernels"
 keywords = ["no-std", "embedded", "time", "monotonic", "real-time"]

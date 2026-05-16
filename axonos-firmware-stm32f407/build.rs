@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2026 Denis Yermakou <denis@axonos.org>
+// Part of the AxonOS project — https://github.com/AxonOS-org
+
 use std::env;
 use std::fs::File;
 use std::io::Write;

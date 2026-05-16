@@ -1,9 +1,10 @@
 [package]
 name = "axonos-intent"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
+authors = ["Denis Yermakou <denis@axonos.org>"]
 description = "Typed intent observations matching the AxonOS wire format (RFC-0006). Encode/decode, conformance vectors, structural validation. #![no_std], #![forbid(unsafe_code)] outside the documented zerocopy path."
 repository = "https://github.com/AxonOS-org/axonos-kernels"
 keywords = ["no-std", "embedded", "bci", "abi", "wire-format"]
@@ -14,8 +15,8 @@ default = []
 std = ["axonos-time/std"]
 
 [dependencies]
-axonos-time = { version = "0.1", path = "../axonos-time" }
-axonos-capability = { version = "0.1", path = "../axonos-capability" }
+axonos-time = { version = "0.1.1", path = "../axonos-time" }
+axonos-capability = { version = "0.1.1", path = "../axonos-capability" }
 
 [lib]
 name = "axonos_intent"

@@ -1,9 +1,9 @@
 # axonos-scheduler
 
-[![Apache 2.0 OR MIT licensed](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-0E2A47?style=flat-square)](#license)
-[![no_std](https://img.shields.io/badge/no__std-yes-0E2A47?style=flat-square)](https://docs.rust-embedded.org/book/intro/no-std.html)
-[![forbid unsafe](https://img.shields.io/badge/unsafe-forbid-0E2A47?style=flat-square)](https://doc.rust-lang.org/reference/attributes/codegen.html)
-[![Kani verified](https://img.shields.io/badge/Kani-verified-0E2A47?style=flat-square)](./kani-proofs/)
+[![Apache 2.0 OR MIT licensed](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue?style=flat-square)](#license)
+[![no_std](https://img.shields.io/badge/no__std-yes-success?style=flat-square)](https://docs.rust-embedded.org/book/intro/no-std.html)
+[![forbid unsafe](https://img.shields.io/badge/unsafe-forbid-brightgreen?style=flat-square)](https://doc.rust-lang.org/reference/attributes/codegen.html)
+[![Kani verified](https://img.shields.io/badge/Kani-verified-blueviolet?style=flat-square)](./kani-proofs/)
 
 Earliest-deadline-first (EDF) scheduling decision logic for AxonOS.
 
@@ -179,4 +179,6 @@ For general correspondence: `info@axonos.org`.
 
 ---
 
-axonos.org · medium.com/@AxonOS · info@axonos.org
+**Author:** Denis Yermakou · [denis@axonos.org](mailto:denis@axonos.org)
+
+[axonos.org](https://axonos.org) · [medium.com/@AxonOS](https://medium.com/@AxonOS) · [github.com/AxonOS-org](https://github.com/AxonOS-org)

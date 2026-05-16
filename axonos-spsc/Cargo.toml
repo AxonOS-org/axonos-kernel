@@ -1,9 +1,10 @@
 [package]
 name = "axonos-spsc"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
+authors = ["Denis Yermakou <denis@axonos.org>"]
 description = "A single-producer, single-consumer ring buffer for AxonOS. #![no_std], #![forbid(unsafe_code)] outside the documented payload path. Verified by Kani BMC."
 repository = "https://github.com/AxonOS-org/axonos-spsc"
 keywords = ["no-std", "embedded", "spsc", "ring-buffer", "lock-free"]
