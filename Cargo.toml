@@ -18,15 +18,18 @@ exclude = [
 ]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.1.5"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/AxonOS-org/axonos-kernels"
+repository = "https://github.com/AxonOS-org/AxonOS-kernel"
 authors = ["Denis Yermakou <denis@axonos.org>"]
 
 [workspace.lints.clippy]
-all = "deny"
+# Lint *groups* must have a lower priority than individual lint overrides
+# (clippy::lint_groups_priority, Rust 1.85+). Otherwise the overrides are
+# ambiguous because table order is not significant in TOML.
+all = { level = "deny", priority = -1 }
 missing_errors_doc = "allow"
 
 [profile.release]

@@ -130,8 +130,8 @@ and its specific dependencies.
 
 ```bash
 # Clone and test
-git clone https://github.com/AxonOS-org/axonos-kernels
-cd axonos-kernels
+git clone https://github.com/AxonOS-org/AxonOS-kernel
+cd AxonOS-kernel
 cargo test --workspace
 # → 66 tests passed.
 ```
@@ -366,7 +366,7 @@ we would like to hear about it: `info@axonos.org`.
 ## Workspace structure
 
 ```
-axonos-kernels/
+AxonOS-kernel/
 ├── README.md                              ← this file
 ├── ABOUT.md                               ← purpose, audience, market
 ├── CONTRIBUTING.md                        ← fork in 3 clicks, attribution

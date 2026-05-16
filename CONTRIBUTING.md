@@ -9,10 +9,10 @@ code subject to the (light) attribution requirements described below.
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │  1. Click "Fork" on the GitHub page                                 │
-│     → https://github.com/AxonOS-org/axonos-kernels                  │
+│     → https://github.com/AxonOS-org/AxonOS-kernel                  │
 │                                                                     │
 │  2. Clone your fork locally                                         │
-│     $ git clone https://github.com/YOUR-USERNAME/axonos-kernels    │
+│     $ git clone https://github.com/YOUR-USERNAME/AxonOS-kernel    │
 │     $ cd axonos-kernels                                            │
 │                                                                     │
 │  3. Verify the workspace builds and tests pass                      │

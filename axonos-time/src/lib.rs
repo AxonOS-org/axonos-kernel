@@ -54,6 +54,10 @@
 #![deny(clippy::all)]
 #![allow(clippy::missing_errors_doc)]
 
+// AtomicU64 doesn't exist on 32-bit ARM (Cortex-M4F, etc.). MockClock
+// is a test helper anyway — gate it behind `target_has_atomic = "64"`
+// so embedded targets simply don't see it.
+#[cfg(target_has_atomic = "64")]
 use core::sync::atomic::{AtomicU64, Ordering};
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -255,10 +259,12 @@ pub trait MonotonicClock {
 /// pattern of a scheduler that holds an `&dyn MonotonicClock` and an
 /// ISR that advances the clock.
 #[derive(Debug, Default)]
+#[cfg(target_has_atomic = "64")]
 pub struct MockClock {
     micros: AtomicU64,
 }
 
+#[cfg(target_has_atomic = "64")]
 impl MockClock {
     /// Create a new mock clock starting at `Instant::ZERO`.
     #[must_use]
@@ -291,6 +297,7 @@ impl MockClock {
     }
 }
 
+#[cfg(target_has_atomic = "64")]
 impl MonotonicClock for MockClock {
     fn now(&self) -> Instant {
         Instant(self.micros.load(Ordering::Relaxed))
