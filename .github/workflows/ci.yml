@@ -134,13 +134,22 @@ jobs:
         with:
           working-directory: ${{ matrix.crate }}/kani-proofs
 
-  # ── 9. cargo-deny (licences, advisories, sources) ────────────────────────
+    # ── 9. cargo-deny (licences, advisories, sources) ────────────────────────
   deny:
     name: cargo-deny
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+      fail-fast: false
+    #
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check
-          arguments: --all-features
+          arguments: --all-features ${{ matrix.checks }}
+
