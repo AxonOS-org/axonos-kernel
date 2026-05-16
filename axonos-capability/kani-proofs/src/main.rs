@@ -37,10 +37,7 @@ fn cap_c1_subset_implies_contains() {
     if a.is_subset_of(b) {
         for cap in Capability::ALL {
             if a.contains(*cap) {
-                assert!(
-                    b.contains(*cap),
-                    "C1: if a ⊆ b and c ∈ a, then c ∈ b"
-                );
+                assert!(b.contains(*cap), "C1: if a ⊆ b and c ∈ a, then c ∈ b");
             }
         }
     }
@@ -210,7 +207,9 @@ fn cap_c7_information_bound_monotone() {
     }
 }
 
-#[cfg(not(kani))]
 fn main() {
+    // This binary exists to host Kani harnesses. Under non-Kani builds,
+    // it is inert; under cargo kani, the harness functions below are run.
+    #[cfg(not(kani))]
     eprintln!("axonos-capability: Kani harness collection. Run with: cargo kani");
 }

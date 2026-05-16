@@ -36,8 +36,10 @@ fn sched_s1_admission_sound() {
     kani::assume(c2 <= t2);
 
     let mut set: TaskSet<4> = TaskSet::new();
-    set.push(Task::periodic(TaskId(1), Micros(c1), Micros(t1))).unwrap();
-    set.push(Task::periodic(TaskId(2), Micros(c2), Micros(t2))).unwrap();
+    set.push(Task::periodic(TaskId(1), Micros(c1), Micros(t1)))
+        .unwrap();
+    set.push(Task::periodic(TaskId(2), Micros(c2), Micros(t2)))
+        .unwrap();
 
     let u = set.utilisation_scaled().unwrap();
     let admit_at_one = set.admit(1_000_000); // U_max = 1.0
@@ -109,7 +111,7 @@ fn sched_s2_select_picks_earliest_deadline() {
 fn sched_s3_tie_break_by_lower_id() {
     let id_a: u16 = kani::any();
     let id_b: u16 = kani::any();
-    kani::assume(id_a < id_b);  // a is strictly lower
+    kani::assume(id_a < id_b); // a is strictly lower
 
     let task_a = Task::periodic(TaskId(id_a), Micros(100), Micros(4000));
     let task_b = Task::periodic(TaskId(id_b), Micros(100), Micros(4000));
@@ -147,7 +149,8 @@ fn sched_s4_rta_single_task() {
     kani::assume(c <= t / 2); // keep below threshold so RTA converges in one step
 
     let mut set: TaskSet<2> = TaskSet::new();
-    set.push(Task::periodic(TaskId(1), Micros(c), Micros(t))).unwrap();
+    set.push(Task::periodic(TaskId(1), Micros(c), Micros(t)))
+        .unwrap();
 
     let r = response_time_bound(&set);
     // For a single task with C < T, L_0 = C < T = min(T_j), so R = C.
@@ -168,7 +171,9 @@ fn sched_s5_empty_set_trivial() {
     assert!(response_time_bound(&set) == Micros::ZERO);
 }
 
-#[cfg(not(kani))]
 fn main() {
+    // This binary exists to host Kani harnesses. Under non-Kani builds,
+    // it is inert; under cargo kani, the harness functions below are run.
+    #[cfg(not(kani))]
     eprintln!("axonos-scheduler: Kani harness collection. Run with: cargo kani");
 }

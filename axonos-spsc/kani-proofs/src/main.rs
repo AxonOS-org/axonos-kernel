@@ -57,9 +57,14 @@ fn spsc_k1_push_pop_round_trip() {
     let v: u32 = kani::any();
 
     p.try_push(v).expect("buffer is empty, push must succeed");
-    let observed = c.try_pop().expect("buffer has one element, pop must succeed");
+    let observed = c
+        .try_pop()
+        .expect("buffer has one element, pop must succeed");
 
-    assert!(observed == v, "K1: round-trip must preserve value bit-exact");
+    assert!(
+        observed == v,
+        "K1: round-trip must preserve value bit-exact"
+    );
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -107,11 +112,17 @@ fn spsc_k3_fifo_order() {
     let a: u32 = kani::any();
     let b: u32 = kani::any();
 
-    p.try_push(a).expect("buffer has 4 slots, push 1 must succeed");
-    p.try_push(b).expect("buffer has 4 slots, push 2 must succeed");
+    p.try_push(a)
+        .expect("buffer has 4 slots, push 1 must succeed");
+    p.try_push(b)
+        .expect("buffer has 4 slots, push 2 must succeed");
 
-    let first = c.try_pop().expect("buffer has 2 elements, pop 1 must succeed");
-    let second = c.try_pop().expect("buffer has 1 element, pop 2 must succeed");
+    let first = c
+        .try_pop()
+        .expect("buffer has 2 elements, pop 1 must succeed");
+    let second = c
+        .try_pop()
+        .expect("buffer has 1 element, pop 2 must succeed");
 
     assert!(first == a, "K3: first pop must return first push (FIFO)");
     assert!(second == b, "K3: second pop must return second push (FIFO)");
@@ -173,10 +184,9 @@ fn spsc_k5_empty_signal() {
 // Stub for non-Kani builds (so `cargo check` succeeds outside Kani)
 // ───────────────────────────────────────────────────────────────────────────
 
-#[cfg(not(kani))]
 fn main() {
-    // This file is a Kani harness collection; it is not meant to be run as
-    // an ordinary binary. The harness functions above are conditionally
-    // compiled only when `cfg(kani)` is set.
+    // This binary hosts Kani harnesses. Under non-Kani builds it is inert;
+    // under cargo kani, the harness functions above are run.
+    #[cfg(not(kani))]
     eprintln!("axonos-spsc: Kani harness collection. Run with: cargo kani");
 }

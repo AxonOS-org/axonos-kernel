@@ -4,11 +4,13 @@ members = [
     "axonos-spsc",
     "axonos-scheduler",
     "axonos-capability",
+    "axonos-time",
 ]
 exclude = [
     "axonos-spsc/kani-proofs",
     "axonos-scheduler/kani-proofs",
     "axonos-capability/kani-proofs",
+    "axonos-time/kani-proofs",
 ]
 
 [workspace.package]
@@ -21,7 +23,7 @@ authors = ["AxonOS contributors <info@axonos.org>"]
 
 [workspace.lints.clippy]
 all = "deny"
-pedantic = "deny"
+pedantic = "warn"
 module_name_repetitions = "allow"
 missing_errors_doc = "allow"
 

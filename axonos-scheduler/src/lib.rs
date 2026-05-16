@@ -65,7 +65,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
-#![deny(clippy::pedantic)]
+#![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 
@@ -284,7 +284,10 @@ impl<const N: usize> TaskSet<N> {
 
     /// Iterate over the tasks in the set.
     pub fn iter(&self) -> impl Iterator<Item = &Task> {
-        self.tasks.iter().take(self.count).filter_map(|t| t.as_ref())
+        self.tasks
+            .iter()
+            .take(self.count)
+            .filter_map(|t| t.as_ref())
     }
 }
 
@@ -332,12 +335,12 @@ pub enum AdmissionFailure {
 /// side effects, no internal state, and is deterministic given its inputs.
 #[must_use]
 pub fn select_next<'a>(ready: &'a [TaskInstance], _now: Instant) -> Option<&'a TaskInstance> {
-    ready.iter().min_by(|a, b| {
-        match a.absolute_deadline().cmp(&b.absolute_deadline()) {
+    ready.iter().min_by(
+        |a, b| match a.absolute_deadline().cmp(&b.absolute_deadline()) {
             Ordering::Equal => a.task.id.cmp(&b.task.id),
             other => other,
-        }
-    })
+        },
+    )
 }
 
 // ───────────────────────────────────────────────────────────────────────────

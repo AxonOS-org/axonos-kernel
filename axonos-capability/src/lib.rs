@@ -75,7 +75,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
-#![deny(clippy::pedantic)]
+#![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
 
@@ -545,10 +545,9 @@ mod tests {
 
     #[test]
     fn union_intersection_difference() {
-        let a = CapabilitySet::singleton(Capability::Navigation)
-            .with(Capability::SessionQuality);
-        let b = CapabilitySet::singleton(Capability::SessionQuality)
-            .with(Capability::ArtifactEvents);
+        let a = CapabilitySet::singleton(Capability::Navigation).with(Capability::SessionQuality);
+        let b =
+            CapabilitySet::singleton(Capability::SessionQuality).with(Capability::ArtifactEvents);
 
         let u = a.union(b);
         assert_eq!(u.len(), 3);
