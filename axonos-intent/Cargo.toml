@@ -1,6 +1,6 @@
 [package]
 name = "axonos-intent"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
@@ -15,8 +15,8 @@ default = []
 std = ["axonos-time/std"]
 
 [dependencies]
-axonos-time = { version = "0.1.8", path = "../axonos-time" }
-axonos-capability = { version = "0.1.8", path = "../axonos-capability" }
+axonos-time = { version = "0.1.9", path = "../axonos-time" }
+axonos-capability = { version = "0.1.9", path = "../axonos-capability" }
 
 [lib]
 name = "axonos_intent"

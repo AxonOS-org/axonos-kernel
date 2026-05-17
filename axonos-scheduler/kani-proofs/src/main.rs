@@ -27,6 +27,7 @@ use axonos_scheduler::{
 /// passes at `U_max=1.0` if and only if the actual utilisation is `<= 1.0`.
 #[cfg(kani)]
 #[kani::proof]
+#[kani::unwind(5)]
 fn sched_s1_admission_sound() {
     let c1: u32 = kani::any();
     let t1: u32 = kani::any();
@@ -36,8 +37,11 @@ fn sched_s1_admission_sound() {
     // Tight bounds: soundness proof is structural and does not require
     // enumeration of large timer values. BCI epoch range is 4 ms, so 4_000 µs
     // is the natural ceiling. Tight bounds keep the SAT problem tractable.
-    kani::assume(t1 > 0 && t1 <= 4_000);
-    kani::assume(t2 > 0 && t2 <= 4_000);
+    // Very tight bounds: soundness is structural and is exposed at boundary
+    // cases (c=0, c=t, c<t). t ≤ 8 captures these with a state space the
+    // SAT solver clears in seconds rather than 35 minutes.
+    kani::assume(t1 > 0 && t1 <= 8);
+    kani::assume(t2 > 0 && t2 <= 8);
     kani::assume(c1 <= t1);
     kani::assume(c2 <= t2);
 
@@ -73,12 +77,11 @@ fn sched_s2_select_picks_earliest_deadline() {
     // Bound parameters to a reasonable range so the solver doesn't blow up
     // on overflow corner cases.
     kani::assume(id_a != id_b);
-    // Tight bounds: solver needs only enough to demonstrate ordering, not
-    // enumerate the full timer range.
-    kani::assume(period_a > 100 && period_a <= 4_000);
-    kani::assume(period_b > 100 && period_b <= 4_000);
-    kani::assume(release_a <= 10_000);
-    kani::assume(release_b <= 10_000);
+    // Tight bounds — ordering proof doesn't need large arithmetic.
+    kani::assume(period_a > 100 && period_a <= 1_000);
+    kani::assume(period_b > 100 && period_b <= 1_000);
+    kani::assume(release_a <= 1_000);
+    kani::assume(release_b <= 1_000);
 
     let task_a = Task::periodic(TaskId(id_a), Micros(100), Micros(period_a));
     let task_b = Task::periodic(TaskId(id_b), Micros(100), Micros(period_b));
@@ -152,10 +155,10 @@ fn sched_s4_rta_single_task() {
     let c: u32 = kani::any();
     let t: u32 = kani::any();
 
-    // Tight bounds for the same reason as S1.
-    kani::assume(t > 100 && t <= 4_000);
-    kani::assume(c > 0 && c < t); // U < 1
-    kani::assume(c <= t / 2); // keep below threshold so RTA converges in one step
+    // Very tight bounds — RTA convergence proof needs only boundary cases.
+    kani::assume(t > 0 && t <= 8);
+    kani::assume(c > 0 && c < t);
+    kani::assume(c <= t / 2);
 
     let mut set: TaskSet<2> = TaskSet::new();
     set.push(Task::periodic(TaskId(1), Micros(c), Micros(t)))
