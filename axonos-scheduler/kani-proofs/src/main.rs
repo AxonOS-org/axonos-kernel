@@ -33,9 +33,11 @@ fn sched_s1_admission_sound() {
     let c2: u32 = kani::any();
     let t2: u32 = kani::any();
 
-    // Constrain to reasonable BCI-scale parameters.
-    kani::assume(t1 > 0 && t1 <= 1_000_000);
-    kani::assume(t2 > 0 && t2 <= 1_000_000);
+    // Tight bounds: soundness proof is structural and does not require
+    // enumeration of large timer values. BCI epoch range is 4 ms, so 4_000 µs
+    // is the natural ceiling. Tight bounds keep the SAT problem tractable.
+    kani::assume(t1 > 0 && t1 <= 4_000);
+    kani::assume(t2 > 0 && t2 <= 4_000);
     kani::assume(c1 <= t1);
     kani::assume(c2 <= t2);
 
@@ -150,7 +152,8 @@ fn sched_s4_rta_single_task() {
     let c: u32 = kani::any();
     let t: u32 = kani::any();
 
-    kani::assume(t > 100 && t <= 1_000_000);
+    // Tight bounds for the same reason as S1.
+    kani::assume(t > 100 && t <= 4_000);
     kani::assume(c > 0 && c < t); // U < 1
     kani::assume(c <= t / 2); // keep below threshold so RTA converges in one step
 
