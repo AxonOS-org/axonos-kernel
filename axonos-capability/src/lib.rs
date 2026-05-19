@@ -295,6 +295,49 @@ impl CapabilitySet {
         self.bits & !other.bits == 0
     }
 
+    /// Returns `true` if `self` and `other` share no capabilities.
+    ///
+    /// Two disjoint sets have no bit in common; their intersection is empty.
+    /// Useful for proving that two manifests cannot interfere with each
+    /// other at the capability layer (orthogonal multitenancy property).
+    ///
+    /// # WCET
+    ///
+    /// Two CPU cycles (one AND, one compare-zero). Suitable for the hot path.
+    ///
+    /// # ABI compatibility
+    ///
+    /// Mirrors `axonos_sdk::CapabilitySet::is_disjoint` (SDK v0.3.4+).
+    #[must_use]
+    pub const fn is_disjoint(self, other: Self) -> bool {
+        self.bits & other.bits == 0
+    }
+
+    /// Returns the set containing every defined capability.
+    ///
+    /// Equivalent to `singleton(Navigation).union(singleton(WorkloadAdvisory))
+    /// .union(singleton(SessionQuality)).union(singleton(ArtifactEvents))`,
+    /// but computed at compile time from [`Self::ADMISSIBLE_MASK`].
+    ///
+    /// This is the **canonical kernel catalogue** — the largest manifest
+    /// the kernel will ever admit. Any application manifest `m` must
+    /// satisfy `m.is_subset_of(CapabilitySet::all())`.
+    ///
+    /// # WCET
+    ///
+    /// Zero — the value is materialised as a literal at compile time.
+    ///
+    /// # ABI compatibility
+    ///
+    /// Mirrors `axonos_sdk::CapabilitySet::all` (SDK v0.3.4+). Both produce
+    /// the bitfield `0x0000_000F` over RFC-0006 wire format.
+    #[must_use]
+    pub const fn all() -> Self {
+        Self {
+            bits: Self::ADMISSIBLE_MASK,
+        }
+    }
+
     /// Iterate over the capabilities in this set, in canonical order
     /// (ascending bit position).
     #[must_use]
@@ -661,5 +704,71 @@ mod tests {
                 assert_ne!(bits[i], bits[j]);
             }
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // v0.2.0 SDK-tandem methods: is_disjoint() + all()
+    // Mirrors axonos_sdk::CapabilitySet API (SDK v0.3.4+).
+    // ────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn is_disjoint_no_overlap() {
+        let nav = CapabilitySet::singleton(Capability::Navigation);
+        let quality = CapabilitySet::singleton(Capability::SessionQuality);
+        assert!(nav.is_disjoint(quality));
+    }
+
+    #[test]
+    fn is_disjoint_overlap_returns_false() {
+        let nav = CapabilitySet::singleton(Capability::Navigation);
+        let both = nav.with(Capability::SessionQuality);
+        assert!(!nav.is_disjoint(both));
+    }
+
+    #[test]
+    fn is_disjoint_empty_with_anything() {
+        let empty = CapabilitySet::EMPTY;
+        let any = CapabilitySet::singleton(Capability::Navigation);
+        assert!(empty.is_disjoint(any));
+        assert!(empty.is_disjoint(empty));
+    }
+
+    #[test]
+    fn is_disjoint_self_is_false_when_nonempty() {
+        let s = CapabilitySet::singleton(Capability::Navigation);
+        assert!(!s.is_disjoint(s));
+    }
+
+    #[test]
+    fn all_method_matches_all_const() {
+        // Method form and const form must produce byte-identical bitfield.
+        assert_eq!(CapabilitySet::all().bits(), CapabilitySet::ALL.bits());
+    }
+
+    #[test]
+    fn all_contains_every_capability() {
+        let a = CapabilitySet::all();
+        for cap in Capability::ALL {
+            assert!(a.contains(*cap), "missing: {cap:?}");
+        }
+        assert_eq!(a.len(), 4);
+    }
+
+    #[test]
+    fn all_is_superset_of_any_subset() {
+        let nav = CapabilitySet::singleton(Capability::Navigation);
+        assert!(nav.is_subset_of(CapabilitySet::all()));
+
+        let two = CapabilitySet::singleton(Capability::Navigation)
+            .with(Capability::SessionQuality);
+        assert!(two.is_subset_of(CapabilitySet::all()));
+
+        // EMPTY is also a subset of all.
+        assert!(CapabilitySet::EMPTY.is_subset_of(CapabilitySet::all()));
+    }
+
+    #[test]
+    fn all_equals_admissible_mask() {
+        assert_eq!(CapabilitySet::all().bits(), CapabilitySet::ADMISSIBLE_MASK);
     }
 }

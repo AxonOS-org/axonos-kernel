@@ -77,6 +77,46 @@ use axonos_spsc::{Full, Producer, SpscBuffer};
 use axonos_time::{Instant, MonotonicClock};
 
 // ───────────────────────────────────────────────────────────────────────────
+// ABI version
+// ───────────────────────────────────────────────────────────────────────────
+
+/// Kernel ABI version exposed to user-space SDKs.
+///
+/// This is the binding contract between the kernel and any consumer
+/// (typically `axonos-sdk`). It governs the wire layout of:
+/// - [`Capability`] discriminants (RFC-0006 §3)
+/// - [`CapabilitySet`] bitfield encoding (RFC-0006 §4)
+/// - [`IntentObservation`] serialised form (RFC-0006 §5)
+/// - The handshake exchange between kernel and SDK (RFC-0006 §2)
+///
+/// **Compatibility rule.** A kernel reporting `KERNEL_ABI_VERSION = N`
+/// must be paired with an SDK that declares the same number in
+/// `axonos_sdk::KERNEL_ABI_VERSION`. Mismatched versions MUST fail the
+/// handshake at install time, never run silently.
+///
+/// **Stability promise.** Incrementing this constant is a breaking change
+/// requiring a new major-version release of *both* the kernel workspace
+/// and the SDK. Wire-format additions that preserve byte-exact decoding
+/// of all currently-defined types do NOT bump this number.
+///
+/// # ABI compatibility table
+///
+/// | Kernel range | SDK range | Compatible |
+/// |:---|:---|:---:|
+/// | `0.1.x` – `0.2.x` | `0.3.x` (this) | ✓ |
+/// | `0.3.x` (future) | `0.4.x` (future) | ✓ |
+///
+/// See `axonos-rfcs/0006-application-sdk-abi.md` for the normative
+/// specification of every field whose encoding is governed by this number.
+pub const KERNEL_ABI_VERSION: u32 = 1;
+
+/// Kernel implementation version (the workspace `version` field).
+///
+/// Distinct from [`KERNEL_ABI_VERSION`] — the implementation can advance
+/// freely so long as the wire contract remains byte-exact.
+pub const KERNEL_IMPL_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// ───────────────────────────────────────────────────────────────────────────
 // Configuration
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -586,5 +626,50 @@ mod tests {
         let t1 = kernel.now();
         assert!(t1 > t0);
         assert_eq!(t1.as_micros() - t0.as_micros(), 4_000);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // v0.2.0 ABI version tests — tandem contract with axonos-sdk
+    // ────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn kernel_abi_version_is_one() {
+        // Locked at v1 by RFC-0006. Bumping requires breaking-change release.
+        assert_eq!(crate::KERNEL_ABI_VERSION, 1);
+    }
+
+    #[test]
+    fn kernel_impl_version_matches_cargo() {
+        // Implementation version flows from CARGO_PKG_VERSION; if this fails
+        // the build configuration is inconsistent.
+        assert_eq!(crate::KERNEL_IMPL_VERSION, env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
+    fn abi_version_is_const_compile_time() {
+        // KERNEL_ABI_VERSION must be usable in const contexts.
+        const VERIFY: u32 = crate::KERNEL_ABI_VERSION;
+        const _: () = assert!(VERIFY == 1);
+    }
+
+    #[test]
+    fn capability_set_all_matches_admissible_mask() {
+        // ABI v1 wire format: CapabilitySet::all() == ADMISSIBLE_MASK.
+        // The SDK relies on this byte-exact match (RFC-0006 §4).
+        use axonos_capability::CapabilitySet;
+        assert_eq!(CapabilitySet::all().bits(), CapabilitySet::ADMISSIBLE_MASK);
+        assert_eq!(CapabilitySet::all().bits(), 0x0000_000F);
+    }
+
+    #[test]
+    fn capability_discriminants_locked_by_abi() {
+        // RFC-0006 §3: discriminants are part of the wire format. If this
+        // test fails, the ABI has broken and KERNEL_ABI_VERSION must be
+        // incremented.
+        use axonos_capability::Capability;
+        assert_eq!(Capability::Navigation as u8, 0);
+        assert_eq!(Capability::WorkloadAdvisory as u8, 1);
+        assert_eq!(Capability::SessionQuality as u8, 2);
+        assert_eq!(Capability::ArtifactEvents as u8, 3);
     }
 }

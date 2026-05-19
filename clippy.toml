@@ -1,4 +1,0 @@
-# AxonOS Clippy Configuration
-
-avoid-breaking-exported-api = true
-doc-valid-idents = ["AxonOS", "ECG", "EEG", "BCI", "EDF", "RMS", "WCET", "WCRT", "LDA", "CSP", "FIR", "IIR", "SPI", "DMA", "AHB", "GPIO", "DWT", "ADC", "FPU", "MAC", "SPSC", "IPC", "FSM", "HMAC", "SHA256", "HKDF", "ATECC608B", "nRF52840", "STM32F407", "STM32H573", "Cortex-M4F", "Cortex-M33", "Cortex-A53", "TrustZone", "WASM", "BLE", "Wi-Fi", "I2C", "USB", "JTAG", "SWD", "CMSIS", "HAL", "MIR", "RFC", "FMEA", "RPN", "FIT", "SIL", "ISO", "IEC", "FDA", "CE", "IRB", "ALS", "AAC", "ERD", "AIRM", "SPD", "MDM", "GLMM", "LMM", "CI", "POT", "EVT", "GEV", "Gumbel", "K-S", "QQ", "MPTA", "MBWCET", "pWCET", "WCET", "SIL-2", "SIL-3", "Q-Sub", "CC-BY-SA-4.0"]

@@ -407,6 +407,45 @@ post-fork compliance burden (which is small).
 
 ---
 
+## ABI compatibility with `axonos-sdk`
+
+The kernel exports a binding ABI version that any consuming SDK must match
+to perform the handshake. This is the contract:
+
+```rust
+use axonos_kernel_core::{KERNEL_ABI_VERSION, KERNEL_IMPL_VERSION};
+
+assert_eq!(KERNEL_ABI_VERSION, 1);            // wire-format contract
+assert_eq!(KERNEL_IMPL_VERSION, "0.2.0");     // implementation version
+```
+
+The wire formats fixed by `KERNEL_ABI_VERSION` are documented normatively
+in [RFC-0006](https://github.com/AxonOS-org/axonos-rfcs):
+
+- `Capability` enum discriminants (§3): `Navigation = 0`, `WorkloadAdvisory = 1`,
+  `SessionQuality = 2`, `ArtifactEvents = 3`.
+- `CapabilitySet` bitfield (§4): 32-bit little-endian, lowest 4 bits used,
+  upper 28 bits reserved; `ADMISSIBLE_MASK = 0x0000_000F`.
+- `IntentObservation` serialised form (§5): see RFC-0006 Annex A for
+  the byte-level diagram.
+- Kernel ↔ SDK handshake (§2): `KERNEL_ABI_VERSION` exchange before any
+  observation is delivered.
+
+### Tandem compatibility matrix
+
+| Kernel version | SDK version | ABI | Compatible |
+|:---|:---|:---:|:---:|
+| `0.1.x` | `0.1.x` | v1 | ✓ |
+| `0.1.x` | `0.3.x` | v1 | ✓ |
+| **`0.2.x` (this)** | **`0.3.x`** | **v1** | **✓** |
+| `0.3.x` (future) | `0.4.x` (future) | v2 | ✓ |
+| `0.2.x` | `0.4.x` (future) | mismatch | ✗ refuse handshake |
+
+Bumping `KERNEL_ABI_VERSION` is a breaking change requiring a new major
+release of both the kernel workspace and the SDK. Adding new wire-format
+fields that preserve byte-exact decoding of all currently-defined types
+does NOT bump this number — only changes that break existing decoders do.
+
 ## Related repositories
 
 - **[`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs)** —

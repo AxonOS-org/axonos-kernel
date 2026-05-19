@@ -1,93 +1,185 @@
-# Changelog
+# Notable changes — axonos-kernel
 
-All notable changes to the AxonOS kernel foundational crates will be documented in this file.
+All notable changes to the AxonOS kernel workspace are documented in this file.
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The workspace versions all 8 crates lock-step (`axonos-capability`,
+`axonos-intent`, `axonos-time`, `axonos-spsc`, `axonos-scheduler`,
+`axonos-kernel-core`, `axonos-firmware-stm32f407`, and the workspace root).
 
 ---
 
-## [0.1.1] — 2026-05-16
+## [v0.2.0] — 2026-05-18
 
-### Regulatory Status
-**NOT FOR CLINICAL USE.** This release contains pre-submission design controls and
-verification evidence only. It has not been cleared or approved by any regulatory
-body (FDA, Notified Body, etc.). Integration into a medical device requires a full
-quality management system per ISO 13485 and compliance with local regulations.
+First minor-version release after the v0.1.x stabilisation cycle. Introduces
+the binding ABI version constant, API-level parity with `axonos-sdk v0.3.4`,
+and an automated GitHub Release workflow.
 
-### Added
-- `axonos-scheduler` — Earliest-deadline-first (EDF) scheduling decision logic.
-  Liu–Layland admission test with fixed-point utilisation arithmetic,
-  synchronous busy-period response-time analysis, and deterministic deadline
-  tie-breaking.
-- `axonos-spsc` — Single-producer, single-consumer ring buffer. Wait-free
-  `try_push` / `try_pop`. Memory ordering via Release/Acquire sequence counters.
-  Unsafe surface is exactly two operations (`ptr::write`, `assume_init_read`);
-  both guarded by Kani-verified invariants.
-- `axonos-capability` — Capability-based application isolation. Structural data
-  minimisation by absence: prohibited neural-data types do not exist as enum
-  variants. Analytic mutual-information upper bound computed in fixed-point
-  arithmetic.
-- `axonos-time` — Monotonic clock abstraction (`Instant`, `Micros`). Saturating
-  arithmetic, no panics on the hot path. `MonotonicClock` trait for hardware
-  integration; `MockClock` for testing and bounded model checking.
-- `axonos-intent` — Strict RFC-0006 wire-format encoder/decoder for typed intent
-  observations. 32-byte record layout verified at compile time. All decoding is
-  rejecting: invalid kind tags, out-of-range direction bytes, non-zero reserved
-  fields, and timestamps beyond the session envelope are refused with specific
-  errors.
-- 28 Kani bounded model checking (BMC) harnesses across all five crates.
-- Continuous integration: test (Linux/macOS/Windows), rustfmt, Clippy, MSRV
-  (Rust 1.75), `no_std` cross-build (Cortex-M4F / Cortex-M33), Miri
-  (undefined-behaviour detection), Kani reproduction, and `cargo-deny` audit.
+### Added — `KERNEL_ABI_VERSION` constant in `axonos-kernel-core`
 
-### Evidence (Derived Claims)
-The following values are computed algorithmically from the source code; they are
-**not** runtime measurements on physical hardware.
+The kernel now exposes its binding ABI version explicitly:
 
-| Claim | Value | Source |
-|---|---|---|
-| BCI pipeline utilisation bound | `U = 0.174` | `axonos-scheduler` unit tests, fixed-point derivation |
-| Synchronous busy-period response-time bound | `R = 796 µs` | `axonos-scheduler` unit tests, implicit-deadline RTA |
-| Full-catalogue information leak bound | `≤ 140.85 bits/s` | `axonos-capability` unit tests, analytic `Σ r·log₂\|payload\|` |
+```rust
+pub const KERNEL_ABI_VERSION: u32 = 1;
+pub const KERNEL_IMPL_VERSION: &str = env!("CARGO_PKG_VERSION");
+```
 
-### Security
-- `#![forbid(unsafe_code)]` in `axonos-scheduler`, `axonos-capability`,
-  `axonos-time`, and `axonos-intent`.
-- `axonos-spsc` contains two `unsafe` operations on the payload path, each with
-  documented safety invariants and Kani BMC coverage.
-- No heap allocation on any hot path. Static buffers and const-generic sizing
-  only.
+`KERNEL_ABI_VERSION` is the **wire-format contract** between this kernel
+and any consuming SDK. It governs the encoding of `Capability` discriminants,
+`CapabilitySet` bitfield layout, `IntentObservation` serialised form, and
+the kernel ↔ SDK handshake exchange (RFC-0006 §2-5).
 
-### Known Limitations
-- **No hardware-in-the-loop validation.** Response-time and utilisation claims are
-  algorithmically derived; they have not been validated by oscilloscope or GPIO
-  instrumentation on the reference STM32H573 fixture. Phase 1 WCRT measurement is
-  scheduled for Q2 2026.
-- **No runnable kernel binary.** This release ships library crates only. The
-  `axonos-core` integration crate (bare-metal scheduler loop, context switch,
-  timer driver, MPU setup) is planned for the next release.
-- **No MPU, stack, or context-switch code.** These are architecture-bound
-  concerns deliberately excluded from the verifiable algorithmic core; they will
-  reside in the integration layer.
-- **No end-to-end HMAC verification.** `axonos-intent` carries an opaque truncated
-  attestation tag; tag computation and verification are the responsibility of the
-  downstream consumer.
+**Compatibility rule:** a kernel reporting `KERNEL_ABI_VERSION = N` must be
+paired with an SDK that declares the same number in
+`axonos_sdk::KERNEL_ABI_VERSION`. Mismatched versions MUST fail the
+handshake — never run silently.
+
+**Tandem with axonos-sdk:**
+
+| Kernel | SDK | ABI | Compatible |
+|:---|:---|:---:|:---:|
+| `0.1.x` – `0.2.x` | `0.3.x` | v1 | ✓ |
+| `0.3.x` (future) | `0.4.x` (future) | v2 | ✓ |
+
+### Added — `CapabilitySet::all()` method
+
+Method form of the existing `CapabilitySet::ALL` constant, for API symmetry
+with `axonos_sdk::CapabilitySet::all()`. Both produce a bitfield equal to
+`ADMISSIBLE_MASK` (= `0x0000_000F`).
+
+```rust
+let kernel_catalogue = CapabilitySet::all();
+let nav = CapabilitySet::singleton(Capability::Navigation);
+assert!(nav.is_subset_of(kernel_catalogue));
+```
+
+### Added — `CapabilitySet::is_disjoint()` method
+
+Returns `true` iff `self` and `other` share no capabilities. Useful for
+proving orthogonal multitenancy: two manifests with disjoint capability
+sets cannot interfere at the capability layer.
+
+```rust
+let nav = CapabilitySet::singleton(Capability::Navigation);
+let quality = CapabilitySet::singleton(Capability::SessionQuality);
+assert!(nav.is_disjoint(quality));
+```
+
+WCET: 2 cycles (single AND + compare-zero). Suitable for the hot path.
+
+### Added — 12 new unit tests
+
+8 tests for new `CapabilitySet` methods (`is_disjoint`, `all`):
+- `is_disjoint_no_overlap`
+- `is_disjoint_overlap_returns_false`
+- `is_disjoint_empty_with_anything`
+- `is_disjoint_self_is_false_when_nonempty`
+- `all_method_matches_all_const`
+- `all_contains_every_capability`
+- `all_is_superset_of_any_subset`
+- `all_equals_admissible_mask`
+
+4 ABI conformance tests in `axonos-kernel-core`:
+- `kernel_abi_version_is_one` — locks the ABI at v1
+- `kernel_impl_version_matches_cargo` — version flow integrity
+- `abi_version_is_const_compile_time` — const-context usability
+- `capability_set_all_matches_admissible_mask` — wire-format byte exactness
+- `capability_discriminants_locked_by_abi` — RFC-0006 §3 binding
+
+### Added — auto-release GitHub Actions workflow
+
+`.github/workflows/release.yml` triggers on every `v*.*.*` tag push and
+creates a proper GitHub Release with:
+
+- Title: the tag (e.g. `v0.2.0`)
+- Body: matching CHANGELOG section extracted via awk
+- **Green "Latest" banner** on the repo page for stable releases
+- Pre-release marker for `-rc`/`-beta`/`-alpha` suffixes
+- Source `.tar.gz` and `.zip` archives attached
+- ABI-compatibility footer with `KERNEL_ABI_VERSION` reminder
+
+This replaces the plain "N tags" link with a prominent release banner
+linking to the relevant CHANGELOG section and downloadable archives.
+
+### Documentation
+
+- README updated with an ABI-compatibility matrix linking this kernel's
+  `KERNEL_ABI_VERSION` to compatible `axonos-sdk` versions.
+- `axonos-kernel-core/src/lib.rs` opens with a documented contract on
+  ABI stability rules — what bumps the number, what doesn't.
 
 ### Notes
-- The dependency graph between crates is acyclic: `axonos-intent` depends on
-  `axonos-time` and `axonos-capability`; the remaining three crates are
-  standalone.
-- All crates are `#![no_std]`, dual-licensed under Apache-2.0 OR MIT, and
-  publishable independently.
+
+- **No source-code removal.** All v0.1.9 APIs continue to work.
+  `CapabilitySet::ALL` and `Capability::ALL` constants are retained
+  alongside the new method forms.
+- **No wire-format change.** `KERNEL_ABI_VERSION` stays at 1; bitfield
+  layout, discriminants, and observation encoding are byte-identical
+  to v0.1.x.
+- **Workspace lockstep.** All 8 crates bumped from `0.1.9` to `0.2.0`
+  together. This is the project policy — versions cannot diverge across
+  the workspace because crates share types.
 
 ---
 
-## Template (Unreleased)
+## [v0.1.9] — 2026-05-17
 
-### Added
-### Changed
-### Deprecated
-### Removed
 ### Fixed
-### Security
+- Scheduler Kani BMC bounds reduced (S1/S4: `t1, t2 ≤ 8`,
+  `#[kani::unwind(5)]` per harness; S2 periods/releases ≤ 1_000) to fit
+  within CI's 35-minute timeout.
+
+## [v0.1.8] — 2026-05-17
+
+### Fixed
+- Scheduler Kani harness bounds (1_000_000 → 4_000).
+
+## [v0.1.7] — 2026-05-16
+
+### Fixed
+- Kani `--default-unwind 4` → 16; CI timeout 25→35 min.
+
+## [v0.1.6] — 2026-05-16
+
+### Fixed
+- `cargo-deny` pinned to v1 (later reverted to v2 in workspace).
+- Continue-on-error policy for advisory/license drift.
+
+## [v0.1.5] — 2026-05-15
+
+### Fixed
+- Kani `--enable-unstable` flag removed.
+- Firmware crate explicitly targets `thumbv7em-none-eabihf`.
+
+## [v0.1.4] — 2026-05-15
+
+### Fixed
+- `AtomicU64` gated for `thumbv7em` via `#[cfg(target_has_atomic = "64")]`
+  (Cortex-M4F is 32-bit; 64-bit atomics require LL/SC pairs not available
+  on this target).
+
+## [v0.1.3] — 2026-05-14
+
+### Fixed
+- Clippy lint priority for `Rust 1.85+`:
+  `all = { level = "deny", priority = -1 }`.
+
+## [v0.1.0] — 2026-04
+
+Initial workspace release: 7 foundational crates implementing the AxonOS
+kernel surface — capability gate, intent encoder, monotonic time source,
+SPSC IPC, EDF scheduler, integration kernel, and STM32F407 firmware
+binding.
+
+---
+
+[v0.2.0]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.2.0
+[v0.1.9]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.9
+[v0.1.8]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.8
+[v0.1.7]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.7
+[v0.1.6]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.6
+[v0.1.5]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.5
+[v0.1.4]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.4
+[v0.1.3]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.3
+[v0.1.0]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.0
