@@ -1,0 +1,45 @@
+[workspace]
+resolver = "2"
+members = [
+    "axonos-spsc",
+    "axonos-scheduler",
+    "axonos-capability",
+    "axonos-time",
+    "axonos-intent",
+    "axonos-kernel-core",
+]
+exclude = [
+    "axonos-spsc/kani-proofs",
+    "axonos-scheduler/kani-proofs",
+    "axonos-capability/kani-proofs",
+    "axonos-time/kani-proofs",
+    "axonos-intent/kani-proofs",
+    "axonos-firmware-stm32f407",
+]
+
+[workspace.package]
+version = "0.2.1"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/AxonOS-org/AxonOS-kernel"
+authors = ["Denis Yermakou <denis@axonos.org>"]
+
+[workspace.lints.clippy]
+# Lint *groups* must have a lower priority than individual lint overrides
+# (clippy::lint_groups_priority, Rust 1.85+). Otherwise the overrides are
+# ambiguous because table order is not significant in TOML.
+all = { level = "deny", priority = -1 }
+missing_errors_doc = "allow"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+debug = true
+opt-level = "s"
+
+[profile.bench]
+codegen-units = 1
+lto = "fat"
+debug = true

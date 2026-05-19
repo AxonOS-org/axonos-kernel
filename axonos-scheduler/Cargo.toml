@@ -1,0 +1,21 @@
+[package]
+name = "axonos-scheduler"
+version = "0.2.1"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0 OR MIT"
+authors = ["Denis Yermakou <denis@axonos.org>"]
+description = "Earliest-deadline-first scheduling decision logic for AxonOS. #![no_std], #![forbid(unsafe_code)]. The pure-Rust algorithmic core of an EDF scheduler — task admission, deadline selection, busy-period response-time analysis."
+repository = "https://github.com/AxonOS-org/axonos-scheduler"
+keywords = ["no-std", "embedded", "real-time", "edf", "scheduler"]
+categories = ["embedded", "no-std", "algorithms"]
+
+[features]
+default = []
+std = []
+
+[dev-dependencies]
+
+[lib]
+name = "axonos_scheduler"
+path = "src/lib.rs"
