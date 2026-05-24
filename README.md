@@ -2,7 +2,7 @@
 
 <img src="https://rustacean.net/assets/rustacean-flat-happy.svg" width="120" alt="Ferris, the Rust mascot" />
 
-# axonos-kernels
+# axonos-kernel
 
 ### the verifiable substrate underneath a brain–computer interface
 
@@ -31,7 +31,7 @@ seven crates · 3 603 lines · 28 formal proofs · 66 tests · zero unsafe outsi
 
 A closed-loop brain–computer interface is a hard-real-time medical
 device measured in microseconds. Most BCI software in 2026 is not built
-on a foundation that can carry that claim. `axonos-kernels` is the
+on a foundation that can carry that claim. `axonos-kernel` is the
 start of one — seven Rust crates that compose into a verifiable kernel
 substrate for BCI signal pipelines on Cortex-M class microcontrollers,
 with the scheduling decision, the inter-process communication
@@ -130,8 +130,8 @@ and its specific dependencies.
 
 ```bash
 # Clone and test
-git clone https://github.com/AxonOS-org/AxonOS-kernel
-cd AxonOS-kernel
+git clone https://github.com/AxonOS-org/axonos-kernel
+cd axonos-kernel
 cargo test --workspace
 # → 66 tests passed.
 ```
@@ -359,14 +359,14 @@ patent litigation against the project. Details in
 We actively encourage forks for research, education, and downstream
 products. The fork procedure takes three clicks; see
 [CONTRIBUTING.md](./CONTRIBUTING.md). If you build something with this,
-we would like to hear about it: `info@axonos.org`.
+we would like to hear about it: `connect@axonos.org`.
 
 ---
 
 ## Workspace structure
 
 ```
-AxonOS-kernel/
+axonos-kernel/
 ├── README.md                              ← this file
 ├── ABOUT.md                               ← purpose, audience, market
 ├── CONTRIBUTING.md                        ← fork in 3 clicks, attribution
@@ -416,7 +416,7 @@ to perform the handshake. This is the contract:
 use axonos_kernel_core::{KERNEL_ABI_VERSION, KERNEL_IMPL_VERSION};
 
 assert_eq!(KERNEL_ABI_VERSION, 1);            // wire-format contract
-assert_eq!(KERNEL_IMPL_VERSION, "0.2.0");     // implementation version
+assert_eq!(KERNEL_IMPL_VERSION, "0.2.1");     // implementation version
 ```
 
 The wire formats fixed by `KERNEL_ABI_VERSION` are documented normatively
@@ -459,7 +459,7 @@ does NOT bump this number — only changes that break existing decoders do.
 
 <div align="center">
 
-**Author:** Denis Yermakou · [denis@axonos.org](mailto:denis@axonos.org)
+**Author:** Denis Yermakou · [connect@axonos.org](mailto:connect@axonos.org)
 
 [axonos.org](https://axonos.org) · [medium.com/@AxonOS](https://medium.com/@AxonOS) · [github.com/AxonOS-org](https://github.com/AxonOS-org)
 
