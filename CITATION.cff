@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "AxonOS Kernel"
+message: >-
+  If you reference or build against this component of the AxonOS
+  project, please cite it using the metadata below. The canonical
+  specification is the axonos-standard repository.
+type: software
+authors:
+  - given-names: Denis
+    family-names: Yermakou
+    affiliation: "AxonOS Project"
+repository-code: "https://github.com/AxonOS-org/axonos-kernel"
+url: "https://axonos.org"
+abstract: >-
+  The AxonOS real-time kernel substrate: a hard real-time, #![no_std] Rust microkernel for brain-computer interfaces, targeting ARM Cortex-M with EDF scheduling and Kani-verified timing properties.
+keywords:
+  - brain-computer interface
+  - real-time systems
+  - operating system
+  - neurotechnology
+  - rust
+license: [Apache-2.0, MIT]
+version: "0.2.1"
