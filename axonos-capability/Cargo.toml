@@ -4,9 +4,9 @@ version = "0.2.1"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
-authors = ["Denis Yermakou <denis@axonos.org>"]
+authors = ["Denis Yermakou <connect@axonos.org>"]
 description = "Capability-based application isolation primitives for AxonOS. Structural data minimisation by absence — prohibited types do not exist in the type catalogue. #![no_std], #![forbid(unsafe_code)]."
-repository = "https://github.com/AxonOS-org/AxonOS-kernel"
+repository = "https://github.com/AxonOS-org/axonos-kernel"
 keywords = ["no-std", "embedded", "capability", "security", "bci"]
 categories = ["embedded", "no-std", "data-structures"]
 

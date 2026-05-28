@@ -10,6 +10,86 @@ The workspace versions all 8 crates lock-step (`axonos-capability`,
 
 ---
 
+## [v0.2.3] — 2026-05-27
+
+AxonOS-style refresh. No source-code or API changes — the v0.2.1
+implementation is preserved byte-identical, including the public
+`KERNEL_ABI_VERSION = 1` contract and all 28 Kani-verified invariants.
+This release brings the workspace up to the unified AxonOS visual and
+documentation standard applied across the organisation.
+
+### Added
+
+- **`.gitignore`** — Rust-workspace hygiene; was missing.
+- **`SECURITY.md`** — vulnerability-disclosure policy mirroring the
+  policy used in `axonos-standard`, `axonos-swarm`, and the AxonOS
+  Project entry-point repository. Explicitly puts the two acknowledged
+  `unsafe` blocks in `axonos-spsc` in scope.
+
+### Changed
+
+- **README badge palette** — replaced the previous mixed palette
+  (orange / blue / blueviolet / purple / yellow / brightgreen, mixing
+  `for-the-badge` and `flat-square` styles) with the canonical AxonOS
+  palette in a single consistent style: AxonOS blue `#0a4a8f` for
+  versioned artefacts (Workspace v0.2.3, Standard v1.0.0, Kernel ABI v1),
+  Rust canonical orange `#CE422B` for the language, trust green `#0d7a5f`
+  for Verified-by-Kani and the unsafe-discipline tag, slate `#475569`
+  for licence and metadata.
+- **README header** — removed the standalone Ferris mascot image; the
+  Rust association is communicated through the canonical badge instead.
+- **README "Related repositories"** — replaced with a full **Position
+  in the AxonOS stack** table covering all seven repositories.
+- **README footer** — canonical centered AxonOS block (project name,
+  contacts, five-city locator with Singapore first), decorative emoji
+  removed.
+- **Repository case in published metadata** — the `repository` URL in
+  every Cargo.toml across the workspace was corrected to the actual,
+  lowercase GitHub path `axonos-kernel` (19 occurrences across the
+  manifests, the root LICENSE, this changelog's history, and
+  CONTRIBUTING). The URL is published to crates.io and must be
+  byte-correct.
+- **Author email everywhere** — the personal author address was
+  replaced with the project-canonical `connect@axonos.org` across 56
+  occurrences in source files, Cargo.toml manifests, sub-crate READMEs,
+  the root LICENSE / NOTICE / ABOUT / CONTRIBUTING, and every per-crate
+  `LICENSE-APACHE` and `LICENSE-MIT` file. The legacy general-contact
+  address was folded into `connect@axonos.org` as well.
+  `security@axonos.org` is unchanged — the security address is distinct.
+
+### Notes
+
+- **Source-code unchanged.** All v0.2.1 APIs work as before. The
+  binding ABI version `KERNEL_ABI_VERSION = 1` is unchanged; the
+  Tandem compatibility matrix (Kernel 0.2.x ↔ SDK 0.3.x ↔ ABI v1)
+  still holds.
+- **Patch bump 0.2.2 → 0.2.3** per SemVer — purely additive,
+  no breaking API or behavioural changes, no new runtime dependency.
+
+---
+
+## [v0.2.2] — 2026-05-26
+
+Documentation and provenance release (tagged on `main`).
+
+### Changed
+
+- Aligned the kernel README surface and contact details.
+
+### Added
+
+- `CITATION.cff` — initial machine-readable citation metadata.
+- Verified the GitHub and Termux SSH commit-signing provenance for the
+  release workflow.
+
+### Notes
+
+- No source-code or API changes. Crate version remained at `0.2.1` for
+  this tag; the comprehensive crate-version bump and the full AxonOS-style
+  refresh land in v0.2.3.
+
+---
+
 ## [v0.2.1] — 2026-05-19
 
 CI patch release. No source or API changes from v0.2.0.
@@ -204,13 +284,13 @@ binding.
 
 ---
 
-[v0.2.1]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.2.1
-[v0.2.0]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.2.0
-[v0.1.9]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.9
-[v0.1.8]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.8
-[v0.1.7]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.7
-[v0.1.6]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.6
-[v0.1.5]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.5
-[v0.1.4]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.4
-[v0.1.3]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.3
-[v0.1.0]: https://github.com/AxonOS-org/AxonOS-kernel/releases/tag/v0.1.0
+[v0.2.1]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.1
+[v0.2.0]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.0
+[v0.1.9]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.9
+[v0.1.8]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.8
+[v0.1.7]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.7
+[v0.1.6]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.6
+[v0.1.5]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.5
+[v0.1.4]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.4
+[v0.1.3]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.3
+[v0.1.0]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.0

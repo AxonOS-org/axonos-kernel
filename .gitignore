@@ -1,0 +1,18 @@
+# Rust build artefacts
+/target/
+**/target/
+*.pdb
+
+# Profiling and coverage
+*.profraw
+tarpaulin-report.*
+lcov.info
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.idea/
+.vscode/

@@ -175,10 +175,10 @@ This crate is part of the AxonOS project. See
 https://github.com/AxonOS-org for the contribution process.
 
 For security disclosures: `security@axonos.org`.
-For general correspondence: `info@axonos.org`.
+For general correspondence: `connect@axonos.org`.
 
 ---
 
-**Author:** Denis Yermakou · [denis@axonos.org](mailto:denis@axonos.org)
+**Author:** Denis Yermakou · [connect@axonos.org](mailto:connect@axonos.org)
 
 [axonos.org](https://axonos.org) · [medium.com/@AxonOS](https://medium.com/@AxonOS) · [github.com/AxonOS-org](https://github.com/AxonOS-org)

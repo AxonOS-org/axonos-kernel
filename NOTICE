@@ -1,5 +1,5 @@
 AxonOS Kernels
-Copyright (c) 2026 Denis Yermakou <denis@axonos.org>
+Copyright (c) 2026 Denis Yermakou <connect@axonos.org>
 
 This product includes software developed by Denis Yermakou
 as part of the AxonOS project (https://axonos.org).
@@ -83,7 +83,7 @@ CONTACT
 ────────────────────────────────────────────────────────────────────
 
 Author:                Denis Yermakou
-Primary email:         denis@axonos.org
+Primary email:         connect@axonos.org
 Project website:       https://axonos.org
 Source repositories:   https://github.com/AxonOS-org
 Security disclosure:   security@axonos.org

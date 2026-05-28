@@ -9,10 +9,10 @@ code subject to the (light) attribution requirements described below.
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │  1. Click "Fork" on the GitHub page                                 │
-│     → https://github.com/AxonOS-org/AxonOS-kernel                  │
+│     → https://github.com/AxonOS-org/axonos-kernel                  │
 │                                                                     │
 │  2. Clone your fork locally                                         │
-│     $ git clone https://github.com/YOUR-USERNAME/AxonOS-kernel    │
+│     $ git clone https://github.com/YOUR-USERNAME/axonos-kernel    │
 │     $ cd axonos-kernels                                            │
 │                                                                     │
 │  3. Verify the workspace builds and tests pass                      │
@@ -50,7 +50,7 @@ imposes four small obligations:
 
    ```rust
    // SPDX-License-Identifier: Apache-2.0 OR MIT
-   // Copyright (c) 2026 Denis Yermakou <denis@axonos.org>
+   // Copyright (c) 2026 Denis Yermakou <connect@axonos.org>
    // Part of the AxonOS project — https://github.com/AxonOS-org
    ```
 
@@ -145,14 +145,14 @@ cargo build --workspace --release --target thumbv7em-none-eabihf
 
 ## Communication
 
-- **General discussion:** `info@axonos.org`
+- **General discussion:** `connect@axonos.org`
 - **Architectural decisions:** open an issue or RFC
 - **Security:** `security@axonos.org`
 - **Partnerships:** `connect@axonos.org`
 
 ---
 
-**Maintainer:** Denis Yermakou · [denis@axonos.org](mailto:denis@axonos.org)
+**Maintainer:** Denis Yermakou · [connect@axonos.org](mailto:connect@axonos.org)
 
 By contributing you affirm you have the right to submit the work under
 the project's dual licence.

@@ -18,12 +18,12 @@ exclude = [
 ]
 
 [workspace.package]
-version = "0.2.1"
+version = "0.2.3"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/AxonOS-org/AxonOS-kernel"
-authors = ["Denis Yermakou <denis@axonos.org>"]
+repository = "https://github.com/AxonOS-org/axonos-kernel"
+authors = ["Denis Yermakou <connect@axonos.org>"]
 
 [workspace.lints.clippy]
 # Lint *groups* must have a lower priority than individual lint overrides

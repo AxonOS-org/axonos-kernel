@@ -108,9 +108,9 @@ issue or RFC contribution against the relevant repository, and discuss
 on the public AxonOS engineering channels.
 
 Security disclosures: `security@axonos.org`.
-Technical correspondence: `info@axonos.org`.
+Technical correspondence: `connect@axonos.org`.
 Partnership and clinical engagement: `connect@axonos.org`.
 
 ---
 
-**Author:** Denis Yermakou · denis@axonos.org · [axonos.org](https://axonos.org)
+**Author:** Denis Yermakou · connect@axonos.org · [axonos.org](https://axonos.org)

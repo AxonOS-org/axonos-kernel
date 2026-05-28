@@ -4,9 +4,9 @@ version = "0.2.1"
 edition = "2021"
 rust-version = "1.75"
 license = "Apache-2.0 OR MIT"
-authors = ["Denis Yermakou <denis@axonos.org>"]
+authors = ["Denis Yermakou <connect@axonos.org>"]
 description = "Integration layer for the AxonOS kernel. Composes the five foundational crates (spsc, scheduler, capability, time, intent) into a coherent BCI signal pipeline running on a 4-millisecond tick. Hardware-independent — bring your own MonotonicClock. #![no_std], #![forbid(unsafe_code)]."
-repository = "https://github.com/AxonOS-org/AxonOS-kernel"
+repository = "https://github.com/AxonOS-org/axonos-kernel"
 keywords = ["no-std", "embedded", "bci", "real-time", "kernel"]
 categories = ["embedded", "no-std"]
 

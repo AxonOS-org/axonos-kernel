@@ -1,27 +1,24 @@
 <div align="center">
 
-<img src="https://rustacean.net/assets/rustacean-flat-happy.svg" width="120" alt="Ferris, the Rust mascot" />
-
 # axonos-kernel
 
-### the verifiable substrate underneath a brain–computer interface
+### The verifiable substrate underneath a brain–computer interface.
 
-```
-seven crates · 3 603 lines · 28 formal proofs · 66 tests · zero unsafe outside two operations
-```
+<sub>seven crates · 3 603 lines · 28 formal proofs · 66 tests · zero unsafe outside two operations</sub>
 
-[![Built with Rust](https://img.shields.io/badge/built%20with-Rust-CE422B?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![License: Apache-2.0 OR MIT](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue?style=for-the-badge)](#license)
-[![no_std](https://img.shields.io/badge/no__std-yes-success?style=for-the-badge)](https://docs.rust-embedded.org/book/intro/no-std.html)
-[![Kani verified](https://img.shields.io/badge/Kani-28%20BMC%20proofs-blueviolet?style=for-the-badge)](https://github.com/model-checking/kani)
+<br/>
 
-[![MSRV](https://img.shields.io/badge/MSRV-1.75-orange?style=flat-square)](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
-[![Cortex-M4F](https://img.shields.io/badge/target-Cortex--M4F-purple?style=flat-square)](https://doc.rust-lang.org/rustc/platform-support/thumbv7em-none-eabi.html)
-[![Cortex-M33](https://img.shields.io/badge/target-Cortex--M33-purple?style=flat-square)](https://doc.rust-lang.org/rustc/platform-support/thumbv8m.main-none-eabi.html)
-[![forbid unsafe](https://img.shields.io/badge/unsafe-forbid_outside_2_ops-brightgreen?style=flat-square)](https://doc.rust-lang.org/reference/attributes/codegen.html)
-[![Workspace](https://img.shields.io/badge/cargo-workspace-yellow?style=flat-square&logo=rust)](https://doc.rust-lang.org/cargo/reference/workspaces.html)
+[![Workspace](https://img.shields.io/badge/Workspace-v0.2.3-0a4a8f?style=flat-square)](https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.3)
+[![Standard](https://img.shields.io/badge/Standard-v1.0.0-0a4a8f?style=flat-square)](https://github.com/AxonOS-org/axonos-standard)
+[![Kernel ABI](https://img.shields.io/badge/Kernel%20ABI-v1-0a4a8f?style=flat-square)](#abi-compatibility-with-axonos-sdk)
+[![Rust](https://img.shields.io/badge/Rust-no__std-CE422B?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Verified](https://img.shields.io/badge/Verified-Kani%2028%20BMC-0d7a5f?style=flat-square)](https://github.com/model-checking/kani)
+[![Unsafe](https://img.shields.io/badge/Unsafe-forbidden%20outside%202%20ops-0d7a5f?style=flat-square)](#engineering-principles)
+[![License](https://img.shields.io/badge/License-Apache--2.0%20OR%20MIT-475569?style=flat-square)](#license)
+[![MSRV](https://img.shields.io/badge/MSRV-1.75-475569?style=flat-square)](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
+[![Target](https://img.shields.io/badge/Target-Cortex--M4F%20%2F%20M33-475569?style=flat-square)](https://doc.rust-lang.org/rustc/platform-support/thumbv7em-none-eabi.html)
 
-[**About**](./ABOUT.md) · [**Architecture**](#architecture) · [**Crates**](#crates) · [**Build**](#build) · [**Verification**](#verification) · [**Contributing**](./CONTRIBUTING.md) · [**Licence**](#license)
+[**About**](./ABOUT.md) &nbsp;·&nbsp; [**Architecture**](#architecture) &nbsp;·&nbsp; [**Crates**](#crates) &nbsp;·&nbsp; [**Build**](#build) &nbsp;·&nbsp; [**Verification**](#verification) &nbsp;·&nbsp; [**Contributing**](./CONTRIBUTING.md) &nbsp;·&nbsp; [**License**](#license)
 
 </div>
 
@@ -416,7 +413,7 @@ to perform the handshake. This is the contract:
 use axonos_kernel_core::{KERNEL_ABI_VERSION, KERNEL_IMPL_VERSION};
 
 assert_eq!(KERNEL_ABI_VERSION, 1);            // wire-format contract
-assert_eq!(KERNEL_IMPL_VERSION, "0.2.1");     // implementation version
+assert_eq!(KERNEL_IMPL_VERSION, "0.2.3");     // implementation version
 ```
 
 The wire formats fixed by `KERNEL_ABI_VERSION` are documented normatively
@@ -437,7 +434,7 @@ in [RFC-0006](https://github.com/AxonOS-org/axonos-rfcs):
 |:---|:---|:---:|:---:|
 | `0.1.x` | `0.1.x` | v1 | ✓ |
 | `0.1.x` | `0.3.x` | v1 | ✓ |
-| **`0.2.x` (this)** | **`0.3.x`** | **v1** | **✓** |
+| **`0.2.x` (this, v0.2.3)** | **`0.3.x`** | **v1** | **✓** |
 | `0.3.x` (future) | `0.4.x` (future) | v2 | ✓ |
 | `0.2.x` | `0.4.x` (future) | mismatch | ✗ refuse handshake |
 
@@ -446,12 +443,17 @@ release of both the kernel workspace and the SDK. Adding new wire-format
 fields that preserve byte-exact decoding of all currently-defined types
 does NOT bump this number — only changes that break existing decoders do.
 
-## Related repositories
+## Position in the AxonOS stack
 
-- **[`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs)** —
-  Engineering specifications (RFC-0001 through RFC-0006).
-- **[`axonos-sdk`](https://github.com/AxonOS-org/axonos-sdk)** —
-  Application-side SDK for consuming intent observations.
+| Layer | Repository | Role |
+|---|---|---|
+| Canonical standard | [`axonos-standard`](https://github.com/AxonOS-org/axonos-standard) | Architecture manual, conformance criteria, validation taxonomy |
+| Engineering RFCs | [`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs) | Numbered design proposals (RFC-0001 through RFC-0006); normative once finalised |
+| **Kernel substrate** | **`axonos-kernel`** | EDF scheduling, SPSC IPC, capability gate, monotonic time |
+| Application boundary | [`axonos-sdk`](https://github.com/AxonOS-org/axonos-sdk) | Typed intents, manifests, ABI-compatible integration |
+| Consent layer | [`axonos-consent`](https://github.com/AxonOS-org/axonos-consent) | Deterministic consent state machine and stimulation-gating protocol |
+| Mesh coordination | [`axonos-swarm`](https://github.com/AxonOS-org/axonos-swarm) | Distributed timing, co-availability, peer health monitoring |
+
 - **Project website:** [axonos.org](https://axonos.org).
 - **Long-form essays:** [medium.com/@AxonOS](https://medium.com/@AxonOS).
 
@@ -459,12 +461,12 @@ does NOT bump this number — only changes that break existing decoders do.
 
 <div align="center">
 
-**Author:** Denis Yermakou · [connect@axonos.org](mailto:connect@axonos.org)
+**The AxonOS Project** &nbsp;·&nbsp; [axonos.org](https://axonos.org) &nbsp;·&nbsp; [connect@axonos.org](mailto:connect@axonos.org) &nbsp;·&nbsp; [security@axonos.org](mailto:security@axonos.org)
 
-[axonos.org](https://axonos.org) · [medium.com/@AxonOS](https://medium.com/@AxonOS) · [github.com/AxonOS-org](https://github.com/AxonOS-org)
+[medium.com/@AxonOS](https://medium.com/@AxonOS) &nbsp;·&nbsp; [github.com/AxonOS-org](https://github.com/AxonOS-org)
 
-Zurich · Berlin · Milano · San Mateo · Singapore
+<sub>Singapore · Zurich · Berlin · Milano · San Mateo</sub>
 
-<sub>Made with 🦀 and a long real-time tick.</sub>
+<sub>© 2026 Denis Yermakou · `axonos-kernel` v0.2.3</sub>
 
 </div>

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Copyright (c) 2026 Denis Yermakou <denis@axonos.org>
+// Copyright (c) 2026 Denis Yermakou <connect@axonos.org>
 // Part of the AxonOS project — https://github.com/AxonOS-org
 
 //! # axonos-scheduler

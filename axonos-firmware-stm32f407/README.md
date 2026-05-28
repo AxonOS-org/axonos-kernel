@@ -163,6 +163,6 @@ See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT).
 
 ---
 
-**Author:** Denis Yermakou · denis@axonos.org
+**Author:** Denis Yermakou · connect@axonos.org
 
 [axonos.org](https://axonos.org) · [medium.com/@AxonOS](https://medium.com/@AxonOS) · [github.com/AxonOS-org](https://github.com/AxonOS-org)

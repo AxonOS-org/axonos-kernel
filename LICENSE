@@ -39,7 +39,7 @@ above grant you rights to the source code and its derivatives; they do
 NOT grant trademark rights.
 
 You may state factually that your software is "based on AxonOS" or
-"derived from AxonOS-kernel". You may NOT use the name "AxonOS" in a
+"derived from axonos-kernel". You may NOT use the name "AxonOS" in a
 manner that implies endorsement of, or affiliation with, the upstream
 project for modified or derivative software.
 
@@ -49,5 +49,5 @@ Contact
 
 Project website:   https://axonos.org
 GitHub:            https://github.com/AxonOS-org
-Maintainer:        Denis Yermakou <denis@axonos.org>
+Maintainer:        Denis Yermakou <connect@axonos.org>
 Security:          security@axonos.org
