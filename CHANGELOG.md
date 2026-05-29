@@ -10,6 +10,31 @@ The workspace versions all 8 crates lock-step (`axonos-capability`,
 
 ---
 
+## [Unreleased]
+
+### Added — cross-crate integration tests (`axonos-kernel-core`)
+
+A `tests/integration.rs` suite that exercises the assembled kernel as an
+**external consumer**, reaching every type through the crate's public surface
+and the crates it re-exports. Tests-only: no library change, no public API
+change, no version increment.
+
+It concentrates on the seams the in-crate unit tests did not cover:
+
+- **`schedule_tick`** — previously untested: earliest-deadline selection,
+  tie-breaking by task id, the empty-ready-set case, and tick-counter advance.
+- **The clock session-envelope guard** — both the observation path and the
+  scheduling path reject a clock whose time lies beyond the session envelope.
+- **A multi-step observation sequence** — three observations produced through
+  the capability gate, drained in FIFO order with monotonically increasing
+  sequence numbers, ring then empty.
+- **Constrained-deadline reachability** — the 0.3.0 `Task::periodic_with_deadline`
+  composes through kernel construction, and `processor_demand_feasible` is
+  reachable through the kernel's public surface, catching a constrained set the
+  utilisation admission test admits.
+
+---
+
 ## [v0.3.0] — 2026-05-29
 
 ### Added — constrained-deadline scheduling (`axonos-scheduler`)
