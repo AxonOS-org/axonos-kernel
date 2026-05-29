@@ -173,7 +173,7 @@ fn observation_sequence_drains_in_order_with_monotonic_sequence() {
     }
 
     // The ring is now empty.
-    assert!(consumer.try_pop().is_none());
+    assert!(consumer.try_pop().is_err());
 }
 
 #[test]
