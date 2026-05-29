@@ -37,10 +37,15 @@
 //! ## Mathematical model
 //!
 //! A periodic task `tau_i = (C_i, T_i, D_i)` has WCET `C_i`, period `T_i`,
-//! and relative deadline `D_i`. The current implementation requires
-//! `D_i = T_i` for all tasks (implicit-deadline task system), which is the
-//! standard case in the BCI signal pipeline. Constrained-deadline scheduling
-//! (`D_i < T_i`) is future work.
+//! and relative deadline `D_i`. Both **implicit-deadline** systems
+//! (`D_i = T_i`, the common case in the BCI signal pipeline; build tasks
+//! with [`Task::periodic`]) and **constrained-deadline** systems
+//! (`D_i <= T_i`; build tasks with [`Task::periodic_with_deadline`]) are
+//! supported. The implicit-deadline case is decided by the Liu–Layland
+//! utilisation bound ([`TaskSet::admit`]); the constrained-deadline case
+//! requires the exact processor-demand criterion
+//! ([`processor_demand_feasible`]), because under constrained deadlines the
+//! utilisation bound is necessary but not sufficient.
 //!
 //! The Liu–Layland EDF feasibility test for implicit-deadline task systems
 //! on a uniprocessor: a task set is schedulable under EDF if and only if
@@ -136,9 +141,9 @@ pub struct Task {
     pub wcet: Micros,
     /// Period (microseconds). Must be > 0.
     pub period: Micros,
-    /// Relative deadline (microseconds). Implicit-deadline systems require
-    /// `deadline == period`; explicit-deadline scheduling (`deadline <
-    /// period`) is not yet supported in this version.
+    /// Relative deadline (microseconds). For implicit-deadline systems
+    /// `deadline == period` (see [`Task::periodic`]); for constrained-deadline
+    /// systems `deadline <= period` (see [`Task::periodic_with_deadline`]).
     pub deadline: Micros,
     /// Stable identifier for the task. Used for diagnostics, audit logs,
     /// and tie-breaking in the scheduler.
@@ -165,6 +170,44 @@ impl Task {
             wcet,
             period,
             deadline: period,
+            id,
+        }
+    }
+
+    /// Construct a task with an explicit **constrained deadline**
+    /// (`deadline <= period`).
+    ///
+    /// A constrained deadline (`deadline < period`) tightens the timing
+    /// requirement relative to the implicit case: each job must complete
+    /// within `deadline` of its release, which is sooner than the next period
+    /// boundary. Constrained-deadline task systems are **not** decided by the
+    /// Liu–Layland utilisation bound alone — utilisation `<= 1` is necessary
+    /// but not sufficient — so use [`processor_demand_feasible`] for an exact
+    /// feasibility verdict rather than [`TaskSet::admit`].
+    ///
+    /// # Panics
+    ///
+    /// In debug builds, panics if `period.0 == 0`, if `wcet.0 > period.0`,
+    /// if `deadline.0 == 0`, or if `deadline.0 > period.0`. Production code
+    /// is expected to validate feasibility via [`processor_demand_feasible`].
+    #[must_use]
+    pub const fn periodic_with_deadline(
+        id: TaskId,
+        wcet: Micros,
+        period: Micros,
+        deadline: Micros,
+    ) -> Self {
+        debug_assert!(period.0 > 0, "period must be > 0");
+        debug_assert!(wcet.0 <= period.0, "wcet cannot exceed period (U > 1)");
+        debug_assert!(deadline.0 > 0, "deadline must be > 0");
+        debug_assert!(
+            deadline.0 <= period.0,
+            "constrained-deadline systems require deadline <= period"
+        );
+        Self {
+            wcet,
+            period,
+            deadline,
             id,
         }
     }
@@ -413,6 +456,196 @@ pub fn response_time_bound<const N: usize>(set: &TaskSet<N>) -> Micros {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// Constrained-deadline feasibility: the processor-demand criterion
+// ───────────────────────────────────────────────────────────────────────────
+
+/// The demand-bound function `dbf(t)`: the maximum cumulative execution
+/// demand of all task jobs whose release time *and* absolute deadline both
+/// fall within a single interval of length `t`.
+///
+/// For a periodic task `(C_i, T_i, D_i)`, the number of jobs with both
+/// release and deadline inside a window of length `t` is
+/// `max(0, floor((t - D_i) / T_i) + 1)`, and each contributes `C_i`. The
+/// dbf is the sum of those contributions over the task set.
+///
+/// This is the quantity the processor-demand criterion compares against `t`.
+/// It is non-decreasing in `t` — a property verified by the Kani harness
+/// `sched_dbf_monotone`.
+#[must_use]
+pub fn demand_bound<const N: usize>(set: &TaskSet<N>, t: Micros) -> u64 {
+    demand_bound_u64(set, u64::from(t.0))
+}
+
+/// Internal `dbf(t)` over a `u64` time, so feasibility testing can evaluate
+/// the dbf at deadline points that may exceed [`Micros`]'s `u32` range.
+fn demand_bound_u64<const N: usize>(set: &TaskSet<N>, t: u64) -> u64 {
+    let mut demand: u64 = 0;
+    for task in set.iter() {
+        let d = u64::from(task.deadline.0);
+        let p = u64::from(task.period.0);
+        let c = u64::from(task.wcet.0);
+        if p == 0 || t < d {
+            continue;
+        }
+        // Jobs with deadline <= t: floor((t - d) / p) + 1.
+        let jobs = (t - d) / p + 1;
+        demand = demand.saturating_add(jobs.saturating_mul(c));
+    }
+    demand
+}
+
+/// The verdict of the constrained-deadline feasibility test
+/// [`processor_demand_feasible`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Feasibility {
+    /// EDF-feasible: total utilisation does not exceed 1 and every checked
+    /// deadline point satisfies `dbf(t) <= t`.
+    Feasible,
+    /// **Not** EDF-feasible: at time `at` the processor demand `demand`
+    /// exceeds the available time, so a deadline will be missed. This is a
+    /// definite counterexample, not an estimate.
+    Infeasible {
+        /// The deadline point at which the demand criterion is violated.
+        at: Micros,
+        /// The processor demand at `at`, in microseconds of work, which
+        /// exceeds `at`.
+        demand: u64,
+    },
+    /// The test could not reach a definite verdict within its bounded
+    /// resources — the feasibility interval or the number of deadline points
+    /// exceeded the analysis caps. This is **not** a pass. A caller must
+    /// treat `Uncertain` as "not shown feasible" and fall back to a stricter
+    /// offline analysis. The test never returns [`Feasibility::Feasible`]
+    /// unless every relevant deadline point was checked.
+    Uncertain,
+}
+
+/// Decide EDF feasibility of a constrained-deadline task system on a
+/// uniprocessor by the **processor-demand criterion** (Baruah, Rosier, and
+/// Howell, 1990).
+///
+/// A constrained-deadline system (`D_i <= T_i`) is EDF-feasible if and only
+/// if its total utilisation does not exceed 1 **and** `dbf(t) <= t` at every
+/// absolute deadline `t` in the feasibility interval. Unlike the
+/// implicit-deadline case, the utilisation bound alone ([`TaskSet::admit`])
+/// is necessary but not sufficient here: a task set well under `U = 1` can
+/// still miss a constrained deadline, and this test catches that where the
+/// utilisation test cannot.
+///
+/// The feasibility interval is bounded, for `U < 1`, by the synchronous
+/// busy-period bound of La and Sha,
+///
+/// ```text
+/// L* = ( sum_i (T_i - D_i) * U_i ) / (1 - U),    U_i = C_i / T_i
+/// ```
+///
+/// and the test evaluates the demand-bound function at every task deadline
+/// `D_i + k * T_i <= L*`. The computation is integer-only — no floating
+/// point on the analysis path — and bounded: if the interval or the number
+/// of deadline points exceeds the analysis caps, the test returns
+/// [`Feasibility::Uncertain`] rather than risk an unsound pass. The
+/// soundness contract is that `Feasible` is returned only when every
+/// deadline point in the interval has been checked.
+///
+/// For an implicit-deadline system (`D_i == T_i` for every task) the bound
+/// `L*` is zero and the verdict reduces to the utilisation test, consistent
+/// with Liu–Layland.
+#[must_use]
+pub fn processor_demand_feasible<const N: usize>(set: &TaskSet<N>) -> Feasibility {
+    const SCALE: u64 = 1_000_000;
+    // Cap on the number of deadline points evaluated before declining.
+    const MAX_POINTS: u32 = 100_000;
+
+    if set.is_empty() {
+        return Feasibility::Feasible;
+    }
+
+    // Necessary condition: U <= 1.
+    let u = match set.utilisation_scaled() {
+        Some(u) => u,
+        None => return Feasibility::Uncertain,
+    };
+    if u > SCALE {
+        // U > 1: infeasible. Report the smallest deadline as the witness.
+        let mut min_d = u32::MAX;
+        for task in set.iter() {
+            if task.deadline.0 < min_d {
+                min_d = task.deadline.0;
+            }
+        }
+        return Feasibility::Infeasible {
+            at: Micros(min_d),
+            demand: demand_bound_u64(set, u64::from(min_d)),
+        };
+    }
+
+    // La–Sha numerator: sum_i (T_i - D_i) * U_i, in units of 1/SCALE.
+    let mut numer: u64 = 0;
+    for task in set.iter() {
+        let d = u64::from(task.deadline.0);
+        let p = u64::from(task.period.0);
+        let c = u64::from(task.wcet.0);
+        if p == 0 {
+            return Feasibility::Uncertain;
+        }
+        let u_i = c.saturating_mul(SCALE) / p;
+        let slack = p.saturating_sub(d); // T_i - D_i >= 0 for D_i <= T_i
+        numer = numer.saturating_add(slack.saturating_mul(u_i));
+    }
+
+    // Feasibility-interval bound L*.
+    let l_star: u64 = if u == SCALE {
+        // U == 1 exactly: the La–Sha bound divides by zero. If all deadlines
+        // are implicit (numer == 0), Liu–Layland gives feasibility at U == 1;
+        // otherwise decline to certify rather than guess.
+        if numer == 0 {
+            return Feasibility::Feasible;
+        }
+        return Feasibility::Uncertain;
+    } else {
+        numer / (SCALE - u)
+    };
+
+    // If the interval exceeds the u32 microsecond range, decline rather than
+    // truncate the analysis.
+    if l_star > u64::from(u32::MAX) {
+        return Feasibility::Uncertain;
+    }
+
+    // Evaluate dbf at every task deadline D_i + k*T_i <= L*, bounded by
+    // MAX_POINTS. Any violation is a definite infeasibility witness.
+    let mut points: u32 = 0;
+    for task in set.iter() {
+        let d = u64::from(task.deadline.0);
+        let p = u64::from(task.period.0);
+        if p == 0 {
+            return Feasibility::Uncertain;
+        }
+        let mut t = d;
+        while t <= l_star {
+            points += 1;
+            if points > MAX_POINTS {
+                return Feasibility::Uncertain;
+            }
+            let demand = demand_bound_u64(set, t);
+            if demand > t {
+                return Feasibility::Infeasible {
+                    at: Micros(u32::try_from(t).unwrap_or(u32::MAX)),
+                    demand,
+                };
+            }
+            let next = t.saturating_add(p);
+            if next == t {
+                break; // saturated; cannot advance further
+            }
+            t = next;
+        }
+    }
+
+    Feasibility::Feasible
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Tests
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -557,5 +790,105 @@ mod tests {
             s.push(Task::periodic(TaskId(3), Micros(100), Micros(1000))),
             Err(TaskSetFull)
         );
+    }
+
+    // ── Constrained-deadline feasibility (processor-demand criterion) ───────
+
+    #[test]
+    fn demand_bound_is_zero_below_first_deadline() {
+        let mut s: TaskSet<4> = TaskSet::new();
+        s.push(Task::periodic_with_deadline(
+            TaskId(1),
+            Micros(50),
+            Micros(1000),
+            Micros(100),
+        ))
+        .unwrap();
+        // No job has its deadline at or before t = 99 (< D = 100).
+        assert_eq!(demand_bound(&s, Micros(99)), 0);
+        // At t = 100 the first job's deadline is reached: demand = C = 50.
+        assert_eq!(demand_bound(&s, Micros(100)), 50);
+        // At t = 1100 a second job's deadline is reached: demand = 2 * 50.
+        assert_eq!(demand_bound(&s, Micros(1100)), 100);
+    }
+
+    #[test]
+    fn implicit_deadline_pipeline_is_feasible() {
+        // The implicit-deadline BCI pipeline reduces to the utilisation test.
+        let s = axonos_pipeline();
+        assert_eq!(processor_demand_feasible(&s), Feasibility::Feasible);
+    }
+
+    #[test]
+    fn constrained_deadline_feasible_case() {
+        // C=50 within D=100: the job fits its deadline; feasible.
+        let mut s: TaskSet<4> = TaskSet::new();
+        s.push(Task::periodic_with_deadline(
+            TaskId(1),
+            Micros(50),
+            Micros(1000),
+            Micros(100),
+        ))
+        .unwrap();
+        assert_eq!(processor_demand_feasible(&s), Feasibility::Feasible);
+    }
+
+    #[test]
+    fn constrained_deadline_infeasible_is_caught_by_pdc_not_utilisation() {
+        // One task: C=200, T=1000, D=100. Utilisation is 0.2 — well under any
+        // sane ceiling — so the Liu–Layland admission test ADMITS it. But the
+        // job needs 200 µs of work within a 100 µs deadline, which is
+        // infeasible. The processor-demand criterion catches what the
+        // utilisation test cannot.
+        let mut s: TaskSet<4> = TaskSet::new();
+        s.push(Task::periodic_with_deadline(
+            TaskId(1),
+            Micros(200),
+            Micros(1000),
+            Micros(100),
+        ))
+        .unwrap();
+
+        // The utilisation test is fooled (U = 0.2 <= 0.25):
+        assert_eq!(s.admit(250_000), Ok(()));
+
+        // The processor-demand criterion is not:
+        match processor_demand_feasible(&s) {
+            Feasibility::Infeasible { at, demand } => {
+                assert_eq!(at, Micros(100));
+                assert_eq!(demand, 200);
+            }
+            other => panic!("expected Infeasible, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn over_utilised_constrained_set_is_infeasible() {
+        // Two tasks summing to U = 1.5 > 1: infeasible at any deadlines.
+        let mut s: TaskSet<4> = TaskSet::new();
+        s.push(Task::periodic_with_deadline(
+            TaskId(1),
+            Micros(800),
+            Micros(1000),
+            Micros(900),
+        ))
+        .unwrap(); // U_1 = 0.8
+        s.push(Task::periodic_with_deadline(
+            TaskId(2),
+            Micros(700),
+            Micros(1000),
+            Micros(900),
+        ))
+        .unwrap(); // U_2 = 0.7
+        assert!(matches!(
+            processor_demand_feasible(&s),
+            Feasibility::Infeasible { .. }
+        ));
+    }
+
+    #[test]
+    fn empty_set_is_trivially_feasible() {
+        let s: TaskSet<4> = TaskSet::new();
+        assert_eq!(processor_demand_feasible(&s), Feasibility::Feasible);
     }
 }

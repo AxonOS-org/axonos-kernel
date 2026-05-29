@@ -16,7 +16,8 @@
 
 #[cfg(kani)]
 use axonos_scheduler::{
-    response_time_bound, select_next, Instant, Micros, Task, TaskId, TaskInstance, TaskSet,
+    demand_bound, response_time_bound, select_next, Instant, Micros, Task, TaskId, TaskInstance,
+    TaskSet,
 };
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -181,6 +182,70 @@ fn sched_s5_empty_set_trivial() {
     let set: TaskSet<4> = TaskSet::new();
     assert!(set.admit(0).is_ok());
     assert!(response_time_bound(&set) == Micros::ZERO);
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// S6: demand-bound function is monotone non-decreasing in t
+// ───────────────────────────────────────────────────────────────────────────
+
+/// **S6.** The demand-bound function `dbf(t)` is non-decreasing in `t`:
+/// for any constrained-deadline task and any `t1 <= t2`, `dbf(t1) <= dbf(t2)`.
+/// This is the monotonicity the processor-demand feasibility test relies on.
+#[cfg(kani)]
+#[kani::proof]
+#[kani::unwind(5)]
+fn sched_dbf_monotone() {
+    let c: u32 = kani::any();
+    let p: u32 = kani::any();
+    let d: u32 = kani::any();
+    kani::assume(p >= 1 && p <= 1000);
+    kani::assume(c >= 1 && c <= p);
+    kani::assume(d >= 1 && d <= p);
+
+    let mut set: TaskSet<1> = TaskSet::new();
+    let _ = set.push(Task::periodic_with_deadline(
+        TaskId(1),
+        Micros(c),
+        Micros(p),
+        Micros(d),
+    ));
+
+    let t1: u32 = kani::any();
+    let t2: u32 = kani::any();
+    kani::assume(t1 <= t2);
+    kani::assume(t2 <= 5000);
+
+    assert!(demand_bound(&set, Micros(t1)) <= demand_bound(&set, Micros(t2)));
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// S7: below the first deadline, demand is zero
+// ───────────────────────────────────────────────────────────────────────────
+
+/// **S7.** For a single task with relative deadline `D`, the demand-bound
+/// function is zero for every `t < D`: no job's deadline has yet elapsed.
+#[cfg(kani)]
+#[kani::proof]
+#[kani::unwind(5)]
+fn sched_dbf_zero_below_first_deadline() {
+    let c: u32 = kani::any();
+    let p: u32 = kani::any();
+    let d: u32 = kani::any();
+    kani::assume(p >= 1 && p <= 1000);
+    kani::assume(c >= 1 && c <= p);
+    kani::assume(d >= 2 && d <= p);
+
+    let mut set: TaskSet<1> = TaskSet::new();
+    let _ = set.push(Task::periodic_with_deadline(
+        TaskId(1),
+        Micros(c),
+        Micros(p),
+        Micros(d),
+    ));
+
+    let t: u32 = kani::any();
+    kani::assume(t < d);
+    assert!(demand_bound(&set, Micros(t)) == 0);
 }
 
 fn main() {

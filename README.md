@@ -4,7 +4,7 @@
 
 ### The verifiable substrate underneath a brain–computer interface.
 
-<sub>seven crates · 3 603 lines · 28 formal proofs · 66 tests · zero unsafe outside two operations</sub>
+<sub>seven crates · 30 formal proofs · 72 tests · zero unsafe outside two operations</sub>
 
 <br/>
 
@@ -130,7 +130,7 @@ and its specific dependencies.
 git clone https://github.com/AxonOS-org/axonos-kernel
 cd axonos-kernel
 cargo test --workspace
-# → 66 tests passed.
+# → 72 tests passed.
 ```
 
 ### One-minute integration
@@ -229,7 +229,7 @@ cd axonos-intent/kani-proofs     && cargo kani
 | T1–T6 | `axonos-time` | Monotonic arithmetic; saturation; clock observability |
 | I1–I5 | `axonos-intent` | Round-trip identity; strict decoder rejection of malformed input |
 
-**Total: 28 BMC harnesses.** Runnable against the published source.
+**Total: 30 BMC harnesses.** Runnable against the published source.
 
 ---
 
@@ -313,7 +313,7 @@ repository.
 
 | Phase | Window | Deliverable |
 |:---|:---|:---|
-| **Now** | May 2026 | Seven crates published. 66 tests, 28 Kani harnesses, CI green. |
+| **Now** | May 2026 | Seven crates published. Constrained-deadline scheduling (processor-demand criterion). 72 tests, 30 Kani harnesses, CI green. |
 | **Phase 1** | Q2 2026 | GPIO-instrumented WCRT measurement on STM32H573 reference fixture. Falsification protocol P1–P5 executed and published regardless of outcome. |
 | **Phase 2** | Q3–Q4 2026 | First 8-channel clinical kit deployment with the partner ALS rehabilitation centre. |
 | **Phase 3** | 2027 | FDA Pre-Submission. Ferrocene-qualified toolchain integration. ISO 14971 risk management file. |

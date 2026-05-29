@@ -19,6 +19,8 @@ This crate contains:
 - Liu–Layland admission test (`TaskSet::admit`)
 - Synchronous busy-period response-time analysis (`response_time_bound`)
 - Earliest-deadline-first selection function (`select_next`)
+- Constrained-deadline feasibility by the processor-demand criterion
+  (`demand_bound`, `processor_demand_feasible`)
 
 This crate does NOT contain:
 
@@ -123,6 +125,8 @@ The crate ships with five Kani harnesses in `kani-proofs/`:
 | S3 | Tie-breaking is deterministic: lower `TaskId` wins |
 | S4 | Single-task RTA equals the task's WCET |
 | S5 | Empty task set is trivially schedulable with `R = 0` |
+| S6 | The demand-bound function `dbf(t)` is monotone non-decreasing in `t` |
+| S7 | Below the first deadline, `dbf(t) = 0` (no job's deadline has elapsed) |
 
 To reproduce:
 
@@ -141,10 +145,18 @@ rustup target add thumbv8m.main-none-eabihf # Cortex-M33 (STM32H573)
 cargo build --release --target thumbv7em-none-eabihf
 ```
 
-## Limitations and future work
+## Capabilities and future work
 
-- **Implicit deadlines only.** Constrained-deadline (`D_i < T_i`) is not
-  yet supported. Required for some sensor-fusion workloads beyond BCI.
+- **Constrained deadlines (`D_i <= T_i`) — supported since 0.3.0.** Tasks may
+  declare a relative deadline shorter than their period via
+  `Task::periodic_with_deadline`. Because the Liu–Layland utilisation bound is
+  necessary but not sufficient under constrained deadlines, feasibility is
+  decided exactly by the **processor-demand criterion** (Baruah, Rosier, and
+  Howell, 1990): `processor_demand_feasible` evaluates the demand-bound
+  function `dbf(t)` at every deadline in the La–Sha feasibility interval. The
+  test is integer-only and bounded; it returns `Uncertain` rather than risk an
+  unsound pass, and never reports `Feasible` unless every relevant deadline
+  point was checked.
 - **No mixed-criticality.** Mixed-criticality EDF-VD (Vestal 2007) is a
   natural extension for the safety-critical regulatory pathway.
 - **No blocking.** Tasks with shared resources (mutexes, semaphores) are
@@ -152,7 +164,7 @@ cargo build --release --target thumbv7em-none-eabihf
   independent. Blocking will require the priority-inheritance or
   priority-ceiling protocol, which is a separate body of work.
 
-These limitations are explicit. They will be addressed in subsequent
+The remaining limitations are explicit. They will be addressed in subsequent
 versions of this crate or in a successor crate (e.g.,
 `axonos-scheduler-mcs`).
 

@@ -10,6 +10,56 @@ The workspace versions all 8 crates lock-step (`axonos-capability`,
 
 ---
 
+## [v0.3.0] — 2026-05-29
+
+### Added — constrained-deadline scheduling (`axonos-scheduler`)
+
+The headline of this release: the scheduler now supports **constrained-deadline**
+task systems (`D_i <= T_i`), the first item on its roadmap. Previously only
+implicit-deadline systems (`D_i = T_i`) were supported.
+
+- **`Task::periodic_with_deadline(id, wcet, period, deadline)`** constructs a
+  task whose relative deadline is shorter than its period. The existing
+  `Task::periodic` (implicit deadline) is unchanged.
+- **`demand_bound(set, t)`** computes the demand-bound function `dbf(t)` — the
+  maximum cumulative execution demand of jobs whose release and deadline both
+  fall within an interval of length `t`.
+- **`processor_demand_feasible(set) -> Feasibility`** decides EDF feasibility
+  by the **processor-demand criterion** (Baruah, Rosier, and Howell, 1990).
+  Under constrained deadlines the Liu–Layland utilisation bound is necessary
+  but not sufficient; this test evaluates `dbf(t) <= t` at every deadline in
+  the La–Sha feasibility interval. It is **integer-only** (no floating point on
+  the analysis path) and **bounded**: it returns `Feasibility::Uncertain`
+  rather than risk an unsound pass, and never returns `Feasible` unless every
+  relevant deadline point was checked. The verdict is `Feasible`,
+  `Infeasible { at, demand }` (a definite counterexample), or `Uncertain`.
+- This catches a class of error the utilisation test cannot: a task set well
+  under `U = 1` can still miss a constrained deadline, and
+  `processor_demand_feasible` reports it as `Infeasible` with the violating
+  deadline and demand.
+- Two new Kani harnesses in `axonos-scheduler/kani-proofs`: `sched_dbf_monotone`
+  (dbf is monotone non-decreasing in `t`) and `sched_dbf_zero_below_first_deadline`
+  (dbf is zero below the first deadline).
+
+### Changed
+
+- All workspace crates and the workspace package version move to **0.3.0** in
+  lockstep; inter-crate path-dependency requirements updated accordingly. Only
+  `axonos-scheduler` carries functional changes in this release; the other
+  crates are versioned together as a coherent kernel release.
+- `axonos-scheduler` is the only crate with API changes, all **additive**: the
+  implicit-deadline API (`Task::periodic`, `TaskSet::admit`, `select_next`,
+  `response_time_bound`) is unchanged and backward-compatible.
+
+### Notes
+
+- `KERNEL_ABI_VERSION` remains **1**: the kernel ABI surface is unchanged. The
+  `Task` struct is unchanged (its `deadline` field already existed), so the
+  addition is source- and ABI-compatible.
+- No `unsafe` introduced; `axonos-scheduler` remains `#![forbid(unsafe_code)]`.
+
+---
+
 ## [v0.2.3] — 2026-05-27
 
 AxonOS-style refresh. No source-code or API changes — the v0.2.1
