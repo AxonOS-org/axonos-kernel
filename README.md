@@ -4,15 +4,15 @@
 
 ### The verifiable substrate underneath a brain–computer interface.
 
-<sub>seven crates · 30 formal proofs · 72 tests · zero unsafe outside two operations</sub>
+<sub>seven crates · formally verified with Kani · zero unsafe outside two documented operations</sub>
 
 <br/>
 
-[![Workspace](https://img.shields.io/badge/Workspace-v0.2.3-0a4a8f?style=flat-square)](https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.3)
+[![Release](https://img.shields.io/github/v/release/AxonOS-org/axonos-kernel?style=flat-square&label=Release&color=0a4a8f)](https://github.com/AxonOS-org/axonos-kernel/releases)
 [![Standard](https://img.shields.io/badge/Standard-v1.0.0-0a4a8f?style=flat-square)](https://github.com/AxonOS-org/axonos-standard)
 [![Kernel ABI](https://img.shields.io/badge/Kernel%20ABI-v1-0a4a8f?style=flat-square)](#abi-compatibility-with-axonos-sdk)
 [![Rust](https://img.shields.io/badge/Rust-no__std-CE422B?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Verified](https://img.shields.io/badge/Verified-Kani%2028%20BMC-0d7a5f?style=flat-square)](https://github.com/model-checking/kani)
+[![Verified](https://img.shields.io/badge/Verified-Kani%20BMC-0d7a5f?style=flat-square)](https://github.com/model-checking/kani)
 [![Unsafe](https://img.shields.io/badge/Unsafe-forbidden%20outside%202%20ops-0d7a5f?style=flat-square)](#engineering-principles)
 [![License](https://img.shields.io/badge/License-Apache--2.0%20OR%20MIT-475569?style=flat-square)](#license)
 [![MSRV](https://img.shields.io/badge/MSRV-1.75-475569?style=flat-square)](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
@@ -413,7 +413,7 @@ to perform the handshake. This is the contract:
 use axonos_kernel_core::{KERNEL_ABI_VERSION, KERNEL_IMPL_VERSION};
 
 assert_eq!(KERNEL_ABI_VERSION, 1);            // wire-format contract
-assert_eq!(KERNEL_IMPL_VERSION, "0.2.3");     // implementation version
+assert_eq!(KERNEL_IMPL_VERSION, "0.4.0");     // implementation version
 ```
 
 The wire formats fixed by `KERNEL_ABI_VERSION` are documented normatively
@@ -432,11 +432,9 @@ in [RFC-0006](https://github.com/AxonOS-org/axonos-rfcs):
 
 | Kernel version | SDK version | ABI | Compatible |
 |:---|:---|:---:|:---:|
-| `0.1.x` | `0.1.x` | v1 | ✓ |
-| `0.1.x` | `0.3.x` | v1 | ✓ |
-| **`0.2.x` (this, v0.2.3)** | **`0.3.x`** | **v1** | **✓** |
-| `0.3.x` (future) | `0.4.x` (future) | v2 | ✓ |
-| `0.2.x` | `0.4.x` (future) | mismatch | ✗ refuse handshake |
+| **`0.1.x` – `0.4.x` (current)** | **`0.1.x` / `0.3.x`** | **v1** | **✓** |
+| a future major | a matching future SDK | v2 (hypothetical) | ✓ |
+| current kernel (ABI v1) | a future ABI-v2 SDK | mismatch | ✗ refuse handshake |
 
 Bumping `KERNEL_ABI_VERSION` is a breaking change requiring a new major
 release of both the kernel workspace and the SDK. Adding new wire-format
@@ -448,10 +446,13 @@ does NOT bump this number — only changes that break existing decoders do.
 | Layer | Repository | Role |
 |---|---|---|
 | Canonical standard | [`axonos-standard`](https://github.com/AxonOS-org/axonos-standard) | Architecture manual, conformance criteria, validation taxonomy |
-| Engineering RFCs | [`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs) | Numbered design proposals (RFC-0001 through RFC-0006); normative once finalised |
+| Engineering RFCs | [`axonos-rfcs`](https://github.com/AxonOS-org/axonos-rfcs) | Numbered design proposals (RFC-0001 through RFC-0007); normative once finalised |
 | **Kernel substrate** | **`axonos-kernel`** | EDF scheduling, SPSC IPC, capability gate, monotonic time |
 | Application boundary | [`axonos-sdk`](https://github.com/AxonOS-org/axonos-sdk) | Typed intents, manifests, ABI-compatible integration |
 | Consent layer | [`axonos-consent`](https://github.com/AxonOS-org/axonos-consent) | Deterministic consent state machine and stimulation-gating protocol |
+| Consent protocol | [`axonos-protocol`](https://github.com/AxonOS-org/axonos-protocol) | Network-level consent protocol; bounded CBOR frames, exhaustive state machine |
+| Conformance | [`axonos-conformance`](https://github.com/AxonOS-org/axonos-conformance) | Byte-exact RFC-0005 / RFC-0006 vectors across Rust, Python, C, JavaScript, Java |
+| Validation | [`axonos-validation`](https://github.com/AxonOS-org/axonos-validation) | Raw measurement traces and reproducible post-processing (evidence ledger) |
 | Mesh coordination | [`axonos-swarm`](https://github.com/AxonOS-org/axonos-swarm) | Distributed timing, co-availability, peer health monitoring |
 
 - **Project website:** [axonos.org](https://axonos.org).
@@ -467,6 +468,6 @@ does NOT bump this number — only changes that break existing decoders do.
 
 <sub>Singapore · Zurich · Berlin · Milano · San Mateo</sub>
 
-<sub>© 2026 Denis Yermakou · `axonos-kernel` v0.2.3</sub>
+<sub>© 2026 Denis Yermakou · `axonos-kernel`</sub>
 
 </div>

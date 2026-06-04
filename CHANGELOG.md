@@ -10,14 +10,14 @@ The workspace versions all 8 crates lock-step (`axonos-capability`,
 
 ---
 
-## [Unreleased]
+## [v0.4.0] — 2026-06-04
 
 ### Added — cross-crate integration tests (`axonos-kernel-core`)
 
 A `tests/integration.rs` suite that exercises the assembled kernel as an
 **external consumer**, reaching every type through the crate's public surface
-and the crates it re-exports. Tests-only: no library change, no public API
-change, no version increment.
+and the crates it re-exports. Tests-only on the library side: no API or behavioural change, no new
+`unsafe`, and `KERNEL_ABI_VERSION` is unchanged at **1**.
 
 It concentrates on the seams the in-crate unit tests did not cover:
 
@@ -32,6 +32,14 @@ It concentrates on the seams the in-crate unit tests did not cover:
   composes through kernel construction, and `processor_demand_feasible` is
   reachable through the kernel's public surface, catching a constrained set the
   utilisation admission test admits.
+
+### Changed
+
+- All workspace crates and the workspace package version move to **0.4.0** in
+  lockstep; inter-crate path-dependency requirements updated accordingly. No
+  crate carries functional library changes in this release — the workspace is
+  versioned together as a coherent kernel release that ships the cross-crate
+  integration-test suite above.
 
 ---
 
@@ -359,6 +367,8 @@ binding.
 
 ---
 
+[v0.4.0]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.4.0
+[v0.3.0]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.3.0
 [v0.2.1]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.1
 [v0.2.0]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.2.0
 [v0.1.9]: https://github.com/AxonOS-org/axonos-kernel/releases/tag/v0.1.9

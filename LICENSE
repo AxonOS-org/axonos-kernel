@@ -1,0 +1,22 @@
+SPDX-License-Identifier: Apache-2.0 OR MIT
+
+AxonOS Kernel — Dual Licence
+============================
+
+This workspace (axonos-kernel) is licensed under your choice of either:
+
+  * Apache License, Version 2.0
+    (see LICENSE-APACHE, or http://www.apache.org/licenses/LICENSE-2.0)
+
+  * MIT License
+    (see LICENSE-MIT, or http://opensource.org/licenses/MIT)
+
+at your option. See NOTICE for required Apache-2.0 attribution.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the work by you, as defined in the Apache-2.0
+licence, shall be dual-licensed as above, without any additional terms or
+conditions. This is the "inbound = outbound" model used by the Rust project.
+
+GitHub's licence detector recognises this standard `LICENSE` filename; the
+per-licence texts live in LICENSE-APACHE and LICENSE-MIT.
