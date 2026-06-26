@@ -1,0 +1,83 @@
+# AxonOS — release gate (BLOCKING).
+#
+# Why this exists: the day-to-day `ci.yml` runs Kani, Miri and cargo-deny with
+# `continue-on-error: true`, because hosted runners make those jobs flaky
+# (timeouts/hangs). That is fine for push/PR feedback, but it means a green
+# `ci.yml` badge does NOT prove the safety claims were checked. This workflow is
+# the hard gate: on every release tag and on PRs into main, the same checks run
+# WITHOUT continue-on-error. A failed or hung Kani proof fails the gate.
+#
+# Make it a required status check in branch protection for `main`.
+name: release-gate
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: blocking gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: thumbv7em-none-eabihf, thumbv8m.main-none-eabihf
+
+      - name: format
+        run: cargo fmt --all -- --check
+
+      - name: clippy (deny warnings)
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: tests
+        run: cargo test --workspace --all-features
+
+      - name: docs (deny warnings)
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
+
+      - name: no_std build — Cortex-M4F (STM32F407)
+        run: cargo build --workspace --release --target thumbv7em-none-eabihf
+
+      - name: no_std build — Cortex-M33 (STM32H573)
+        run: cargo build --workspace --release --target thumbv8m.main-none-eabihf
+
+      - name: cargo-deny (bans, licenses, sources, advisories) — MUST pass
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check bans licenses sources advisories
+
+      - name: Kani BMC — MUST pass (no continue-on-error)
+        run: |
+          cargo install --locked kani-verifier
+          cargo kani setup
+          for d in axonos-spsc axonos-scheduler axonos-capability axonos-time axonos-intent; do
+            echo "::group::kani $d"
+            ( cd "$d/kani-proofs" && cargo kani --default-unwind 16 )
+            echo "::endgroup::"
+          done
+
+  version-check:
+    name: tag == crate version
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: assert tag matches Cargo version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          CRATE="$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')"
+          echo "tag=$TAG crate=$CRATE"
+          test "$TAG" = "$CRATE" || { echo "::error::tag v$TAG != Cargo version $CRATE"; exit 1; }
