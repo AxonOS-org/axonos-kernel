@@ -291,7 +291,7 @@ This repository contains two kinds of quantitative claims:
 - **Specification** — cited from primary hardware documentation.
 
 It contains **no** runtime-measured claims from the AxonOS reference
-hardware. Hardware measurement is Phase-1 work, scheduled for Q2 2026
+hardware. Hardware measurement is Phase-1 work, pending an instrumented evaluation-board fixture, which is not yet procured; no date is given because one would be invented
 under the falsification protocol described in the preprint.
 
 Specifically:
@@ -314,9 +314,17 @@ repository.
 | Phase | Window | Deliverable |
 |:---|:---|:---|
 | **Now** | May 2026 | Seven crates published. Constrained-deadline scheduling (processor-demand criterion). 72 tests, 30 Kani harnesses, CI green. |
-| **Phase 1** | Q2 2026 | GPIO-instrumented WCRT measurement on STM32H573 reference fixture. Falsification protocol P1–P5 executed and published regardless of outcome. |
-| **Phase 2** | Q3–Q4 2026 | First 8-channel clinical kit deployment with the partner ALS rehabilitation centre. |
-| **Phase 3** | 2027 | FDA Pre-Submission. Ferrocene-qualified toolchain integration. ISO 14971 risk management file. |
+| **Phase 1** | blocked: fixture not yet procured | GPIO-instrumented WCRT measurement on STM32H573 reference fixture. Falsification protocol P1–P5 executed and published regardless of outcome. |
+| **Phase 2** | after Phase 1 | First 8-channel clinical kit deployment with the partner ALS rehabilitation centre. |
+| **Phase 3** | after Phase 2 | FDA Pre-Submission. Ferrocene-qualified toolchain integration. ISO 14971 risk management file. |
+
+
+Dates appear in this table only where the work is inside this project's
+control. Phase 1 waits on hardware that has not been procured, and a phase
+that depends on a blocked one cannot honestly carry a date of its own — so
+the later rows state their precondition instead. This is RFC-0003 applied to
+a roadmap: a target that expires while nobody edits it says more about a
+project than an honest dependency ever did.
 
 ---
 
