@@ -8,7 +8,9 @@ type: software
 authors:
   - given-names: Denis
     family-names: Yermakou
-    affiliation: "AxonOS Project"
+    email: "connect@axonos.org"
+    affiliation: "The AxonOS Project"
+    website: "https://axonos.org"
 repository-code: "https://github.com/AxonOS-org/axonos-kernel"
 url: "https://axonos.org"
 abstract: >-

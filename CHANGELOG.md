@@ -1,3 +1,50 @@
+# Changelog
+
+## [0.4.1] — 2026-08-13
+
+### Fixed
+- **The licence read as unlicensed.** `LICENSE` held an explanation of dual
+  licensing rather than a licence text, so GitHub's detector matched nothing
+  and reported `NOASSERTION` — which is what an audit tool, a package index or
+  a lawyer's checklist reads as *unlicensed*. The community map showed it that
+  way, which is how it was noticed at all.
+
+  `LICENSE-APACHE` and `LICENSE-MIT` have been present and correct since the
+  beginning. Both were being ignored, because a file with prose in it stood
+  where the detector looks first. `LICENSE` now carries the MIT text and the
+  explanation moved to `LICENSING.md`, under a name that is not load-bearing.
+
+- **A configuration refusal was discarded five times.** `config.add_task(...).ok()`
+  throws away `TaskSetFull`, so a task set that no longer fits its period would
+  boot as a smaller task set and run. It is `.expect()` with the reason now: a
+  refusal here is a fact about this firmware and must not be silent.
+
+- **The idle loop spun on `nop`.** It held the core at full clock through the
+  idle portion of every 4 ms period, which on a device running from an 800 mAh
+  cell is most of the power budget spent doing nothing. `wfi` parks the core
+  until an interrupt; the admission test in RFC-0008 already accounts for
+  interrupt latency in its blocking term, so the timing argument is unchanged.
+
+- **Two expired quarters.** The module header and the task-set comment both
+  promised Phase-1 measurement in "Q2 2026" — a quarter that closed in June.
+  This project removed that shape of promise from its RFCs and from six
+  translations and left it standing in its own firmware. Both now carry the
+  condition that gates the work, and no date, because a date here would be
+  invented.
+
+### Notes
+An external audit prompted this and got two of its three headline numbers
+wrong: it reported 28 Kani harnesses against 30 in the tree, and 66 tests
+against 96. Both of its critical findings restated comments the code already
+carries — the firmware documents its own 25.6-second DWT wrap and says a
+production deployment must implement the wrap-tracking extension. A documented
+limitation of a reference binary is not a critical vulnerability of a kernel.
+
+What the audit did find is in this release, and it is a patch rather than the
+twelve-feature release it argued for: changing twelve things in a working
+kernel to answer findings that are not there is how a project acquires the
+defects it later has to retract.
+
 # Notable changes — axonos-kernel
 
 All notable changes to the AxonOS kernel workspace are documented in this file.

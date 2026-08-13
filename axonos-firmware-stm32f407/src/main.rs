@@ -62,7 +62,8 @@
 //! This binary has not been executed on hardware in the repository CI.
 //! It is verified only at the build level: `cargo build --release
 //! --target thumbv7em-none-eabihf` must succeed. Phase-1 measurement
-//! (Q2 2026) will exercise this firmware on a GPIO-instrumented
+//! (once an instrumented fixture exists) will exercise this firmware on a
+//! GPIO-instrumented
 //! reference fixture with falsification thresholds set in advance per
 //! the published preprint.
 
@@ -144,23 +145,37 @@ fn build_kernel() -> Result<BciKernel<DwtClock, 8, 64>, axonos_kernel_core::Kern
     let mut config: KernelConfig<8, 64> = KernelConfig::new();
 
     // The reference BCI signal pipeline, with WCETs from the preprint.
-    // These are nominal values; real WCETs will be measured per the
-    // Phase-1 falsification protocol (Q2 2026, RFC-0003).
+    // These are nominal values. Real WCETs will be measured per the Phase-1
+    // falsification protocol of RFC-0003, once an instrumented measurement
+    // fixture exists. No date is given here because one would be invented —
+    // this comment carried "Q2 2026" past the end of that quarter, which is
+    // the shape of promise this project removed from its RFCs and its
+    // translations and left standing in its own firmware.
     config
         .add_task(Task::periodic(TaskId(1), Micros(642), Micros(4000)))
-        .ok();
+        .expect("the reference task set must be admissible; a refusal here \
+means the published WCETs no longer fit the period, which is a fact about \
+this firmware and must not be discarded");
     config
         .add_task(Task::periodic(TaskId(2), Micros(12), Micros(4000)))
-        .ok();
+        .expect("the reference task set must be admissible; a refusal here \
+means the published WCETs no longer fit the period, which is a fact about \
+this firmware and must not be discarded");
     config
         .add_task(Task::periodic(TaskId(3), Micros(18), Micros(4000)))
-        .ok();
+        .expect("the reference task set must be admissible; a refusal here \
+means the published WCETs no longer fit the period, which is a fact about \
+this firmware and must not be discarded");
     config
         .add_task(Task::periodic(TaskId(4), Micros(24), Micros(4000)))
-        .ok();
+        .expect("the reference task set must be admissible; a refusal here \
+means the published WCETs no longer fit the period, which is a fact about \
+this firmware and must not be discarded");
     config
         .add_task(Task::periodic(TaskId(5), Micros(100), Micros(1_000_000)))
-        .ok();
+        .expect("the reference task set must be admissible; a refusal here \
+means the published WCETs no longer fit the period, which is a fact about \
+this firmware and must not be discarded");
 
     // Default application manifest: Navigation + SessionQuality.
     let manifest = Manifest::new(
@@ -198,7 +213,19 @@ fn main() -> ! {
         let now = kernel.now();
         let next_deadline = now.add_micros(axonos_time::Micros(4_000));
         while kernel.now() < next_deadline {
-            cortex_m::asm::nop();
+            // Wait for an interrupt rather than spinning on nop.
+            //
+            // A nop loop holds the core at full clock for the whole idle
+            // portion of every 4 ms period, which on a device running from an
+            // 800 mAh cell is most of its power budget spent doing nothing.
+            // WFI parks the core until any interrupt arrives; the SysTick that
+            // drives the wrap-tracking extension is enough to wake it, and the
+            // loop re-checks the deadline on every wake.
+            //
+            // The timing argument is unchanged: WFI wakes on interrupt, and
+            // the admission test in RFC-0008 already accounts for interrupt
+            // latency in its blocking term.
+            cortex_m::asm::wfi();
         }
 
         // Produce one synthetic Navigation observation. In a real
