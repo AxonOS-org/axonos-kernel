@@ -130,8 +130,39 @@ and its specific dependencies.
 git clone https://github.com/AxonOS-org/axonos-kernel
 cd axonos-kernel
 cargo test --workspace
-# → 72 tests passed.
+# → 96 tests passed.
 ```
+
+### Check the proofs rather than the count
+
+Thirty machine-checked proofs is a number, and a number in a README is a claim
+until somebody runs it.
+
+```bash
+cargo install --locked kani-verifier && cargo kani setup
+cd axonos-spsc/kani-proofs && cargo kani
+```
+
+Five harnesses run, and their names say what each one settles:
+
+| Harness | What it establishes |
+|:--|:--|
+| `spsc_k1_push_pop_round_trip` | A value pushed is the value popped |
+| `spsc_k2_try_push_bounded` | A push into a full queue fails rather than overwrites |
+| `spsc_k3_fifo_order` | Order is preserved across the ring wrap |
+| `spsc_k4_full_signal` | The full signal is exact, not conservative |
+| `spsc_k5_empty_signal` | The empty signal is exact |
+
+What that verifies is worth stating precisely, because "formally verified" is
+said more loosely than it should be. Kani is a **bounded** model checker: it
+proves a property for all inputs within a bound it can search, not for all
+inputs. Here the bound is the queue capacity — the proofs hold for every
+sequence of operations on a queue of that size, and say nothing about a larger
+one.
+
+It does not establish that the queue is fast, that the surrounding code uses it
+correctly, or that the hardware behaves as the model assumes. Those are three
+different questions and this answers none of them.
 
 ### One-minute integration
 
@@ -334,7 +365,7 @@ repository.
 
 | Phase | Window | Deliverable |
 |:---|:---|:---|
-| **Now** | May 2026 | Seven crates published. Constrained-deadline scheduling (processor-demand criterion). 72 tests, 30 Kani harnesses, CI green. |
+| **Now** | May 2026 | Seven crates published. Constrained-deadline scheduling (processor-demand criterion). 96 tests, 30 Kani harnesses, CI green. |
 | **Phase 1** | blocked: fixture not yet procured | GPIO-instrumented WCRT measurement on STM32H573 reference fixture. Falsification protocol P1–P5 executed and published regardless of outcome. |
 | **Phase 2** | after Phase 1 | First 8-channel clinical kit deployment with the partner ALS rehabilitation centre. |
 | **Phase 3** | after Phase 2 | FDA Pre-Submission. Ferrocene-qualified toolchain integration. ISO 14971 risk management file. |

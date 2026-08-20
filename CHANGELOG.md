@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.2] — 2026-08-20
+
+### Fixed
+- **The thirty-second tour promised the wrong number.** It showed
+  `cargo test --workspace` and told the reader to expect `72 tests passed`. The
+  workspace runs 96. A reader following the first instruction in the README
+  would have found the very first thing they checked disagreeing with the page.
+
+  The count had been right when it was written and drifted as tests were added,
+  which is the failure mode of any number typed into prose beside a command
+  that prints it.
+
+### Added
+- **How to check the proofs rather than the count.** Thirty machine-checked
+  proofs is a number, and a number in a README is a claim until somebody runs
+  it. The command is now given with the crate path that actually works, and the
+  five SPSC harnesses are listed with what each one settles.
+
+  Stated precisely alongside it: Kani is a *bounded* model checker. It proves a
+  property for all inputs within a bound it can search, not for all inputs.
+  Here the bound is the queue capacity, and the proofs say nothing about a
+  larger queue. "Formally verified" is said more loosely than it should be, and
+  a page claiming thirty proofs owes the reader that distinction.
+
 ## [0.4.1] — 2026-08-13
 
 ### Fixed
