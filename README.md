@@ -233,6 +233,27 @@ cd axonos-intent/kani-proofs     && cargo kani
 
 ---
 
+### Checked against a second implementation
+
+`dy-wcet`, written separately at [DY Research](https://github.com/DYResearch),
+computes the same response times on a shared task set — and the first attempt
+at that comparison is the part worth reading.
+
+It used the pipeline as it stands: five tasks totalling 796 µs against a
+shortest period of 4 000. Both tools returned 796 and it looked like agreement.
+It was not. With the sum below the shortest period, no task activates twice in
+any response window, every ceiling is 1, and the fixed point is the first value
+tried — what had been verified was that 642 + 12 + 18 + 24 + 100 = 796.
+
+The set now used has 1 710 µs of execution against a 1 000 µs period, so
+`telemetry_tx` takes three iterations and the activation count changes between
+them. Full derivation, iteration by iteration:
+[`docs/CROSSCHECK.md`](docs/CROSSCHECK.md).
+
+Two implementations agreeing does not make either correct — both are mine, and
+a shared misreading agrees with itself perfectly. Every figure there carries its
+arithmetic for that reason.
+
 ## Engineering principles
 
 These principles govern every technical decision and are visible in
