@@ -1,0 +1,234 @@
+{
+  "$comment": "Cross-check fixture for dy-wcet. Every response time here is derived, not asserted: the derivation array records each iteration of the recurrence with the activation count that produced it, so this file can be checked without running anything.",
+  "author": "Denis Yermakou <connect@axonos.org>",
+  "licence": "Apache-2.0 OR MIT",
+  "tool": "dy-wcet 0.1.1",
+  "scheduling": "fixed priority, rate-monotonic, priority-ceiling blocking",
+  "utilisation_ppm": 335250,
+  "sum_wcet_us": 1710,
+  "shortest_period_us": 1000,
+  "exercises_recurrence": true,
+  "schedulable": true,
+  "tasks": [
+    {
+      "name": "sensor_poll",
+      "priority": 0,
+      "wcet_us": 120,
+      "period_us": 1000,
+      "deadline_us": 1000,
+      "blocking_us": 0,
+      "response_us": 120,
+      "meets_deadline": true,
+      "iterations": 1,
+      "derivation": [
+        {
+          "r_us": 120,
+          "interference": [],
+          "next_us": 120
+        }
+      ]
+    },
+    {
+      "name": "signal_pipeline",
+      "priority": 1,
+      "wcet_us": 642,
+      "period_us": 4000,
+      "deadline_us": 4000,
+      "blocking_us": 0,
+      "response_us": 762,
+      "meets_deadline": true,
+      "iterations": 2,
+      "derivation": [
+        {
+          "r_us": 642,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            }
+          ],
+          "next_us": 762
+        },
+        {
+          "r_us": 762,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            }
+          ],
+          "next_us": 762
+        }
+      ]
+    },
+    {
+      "name": "consent_fsm",
+      "priority": 2,
+      "wcet_us": 30,
+      "period_us": 4000,
+      "deadline_us": 4000,
+      "blocking_us": 40,
+      "response_us": 832,
+      "meets_deadline": true,
+      "iterations": 2,
+      "derivation": [
+        {
+          "r_us": 70,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            }
+          ],
+          "next_us": 832
+        },
+        {
+          "r_us": 832,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            }
+          ],
+          "next_us": 832
+        }
+      ]
+    },
+    {
+      "name": "hmac_attestation",
+      "priority": 3,
+      "wcet_us": 18,
+      "period_us": 8000,
+      "deadline_us": 8000,
+      "blocking_us": 40,
+      "response_us": 850,
+      "meets_deadline": true,
+      "iterations": 2,
+      "derivation": [
+        {
+          "r_us": 58,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 30
+            }
+          ],
+          "next_us": 850
+        },
+        {
+          "r_us": 850,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 30
+            }
+          ],
+          "next_us": 850
+        }
+      ]
+    },
+    {
+      "name": "telemetry_tx",
+      "priority": 4,
+      "wcet_us": 900,
+      "period_us": 20000,
+      "deadline_us": 20000,
+      "blocking_us": 0,
+      "response_us": 1830,
+      "meets_deadline": true,
+      "iterations": 3,
+      "derivation": [
+        {
+          "r_us": 900,
+          "interference": [
+            {
+              "jobs": 1,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 30
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 18
+            }
+          ],
+          "next_us": 1710
+        },
+        {
+          "r_us": 1710,
+          "interference": [
+            {
+              "jobs": 2,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 30
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 18
+            }
+          ],
+          "next_us": 1830
+        },
+        {
+          "r_us": 1830,
+          "interference": [
+            {
+              "jobs": 2,
+              "wcet_us": 120
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 642
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 30
+            },
+            {
+              "jobs": 1,
+              "wcet_us": 18
+            }
+          ],
+          "next_us": 1830
+        }
+      ]
+    }
+  ]
+}
