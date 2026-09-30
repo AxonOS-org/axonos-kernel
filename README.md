@@ -526,8 +526,6 @@ does NOT bump this number — only changes that break existing decoders do.
 
 [medium.com/@AxonOS](https://medium.com/@AxonOS) &nbsp;·&nbsp; [github.com/AxonOS-org](https://github.com/AxonOS-org)
 
-<sub>Singapore · Zurich · Berlin · Milano · San Mateo</sub>
-
 <sub>© 2026 Denis Yermakou · `axonos-kernel`</sub>
 
 </div>
