@@ -14,7 +14,7 @@
 //! - The [`Kind`] and [`Direction`] enums — typed discriminants of the
 //!   observation payload.
 //! - The [`Confidence`] type — a Q0.16 fixed-point classifier confidence
-//!   in the range `[0, 1)`, enforcing the RFC's prohibition on exact 1.0.
+//!   `v / u16::MAX` in the range `[0, 1]`, as RFC-0006 defines it.
 //! - The encode/decode functions [`IntentObservation::encode`] and
 //!   [`IntentObservation::decode`] — strict, all-or-nothing serialisation
 //!   to/from the wire format.
@@ -253,15 +253,20 @@ pub enum ArtifactKind {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Confidence — Q0.16 fixed-point, [0, 1)
+// Confidence — Q0.16 fixed-point, [0, 1], denominator u16::MAX
 // ───────────────────────────────────────────────────────────────────────────
 
 /// Classifier confidence as Q0.16 fixed-point.
 ///
-/// The encoded value `v` represents the confidence `v / 65_536`. The range
-/// is `[0, 65_535 / 65_536]` ≈ `[0, 0.99998]`. The value `1.0` exactly is
-/// **not representable by design** — confidence claims of exactly 1.0 are
-/// forbidden (RFC-0006 §4.2 `confidence_q0_16`).
+/// The encoded value `v` represents the confidence `v / 65_535` — the
+/// denominator is `u16::MAX`, not 2^16, as RFC-0006 (`quality_raw`, corrected
+/// 2026-08-11) and `axonos-sdk` define it. The range is `[0, 1.0]`
+/// inclusive, and `1.0` is representable as `0xFFFF`. Comparisons and
+/// decision logic use the raw `u16`; any float view is for display only.
+///
+/// Until 0.4.3 this crate documented the withdrawn rule (denominator 2^16,
+/// `1.0` unrepresentable). The bytes on the wire were always the same raw
+/// `u16`; only the documented meaning of `0xFFFF` differed from the SDK.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Confidence(u16);
 
@@ -269,7 +274,7 @@ impl Confidence {
     /// The minimum representable confidence: 0.0.
     pub const MIN: Self = Self(0);
 
-    /// The maximum representable confidence: 65_535 / 65_536 ≈ 0.99998.
+    /// The maximum confidence, `0xFFFF`, which represents exactly 1.0.
     pub const MAX: Self = Self(u16::MAX);
 
     /// Construct from a raw Q0.16 value.
@@ -312,7 +317,7 @@ pub struct IntentObservation {
     pub kind: Kind,
     /// The kind-specific payload.
     pub direction: Direction,
-    /// Q0.16 confidence in `[0, 1)`.
+    /// Q0.16 confidence in `[0, 1]` (`v / 65_535`).
     pub confidence: Confidence,
     /// Per-subscription monotonic sequence counter.
     pub sequence: u32,
@@ -580,11 +585,12 @@ mod tests {
     }
 
     #[test]
-    fn confidence_max_does_not_represent_one() {
-        // Per RFC-0006, exact 1.0 must not be representable.
+    fn confidence_max_represents_one() {
+        // RFC-0006 (corrected 2026-08-11) and axonos-sdk: v / u16::MAX,
+        // so 0xFFFF is exactly 1.0.
         assert_eq!(Confidence::MAX.as_q0_16(), u16::MAX);
-        let as_fraction = f64::from(Confidence::MAX.as_q0_16()) / 65536.0;
-        assert!(as_fraction < 1.0);
+        let as_fraction = f64::from(Confidence::MAX.as_q0_16()) / f64::from(u16::MAX);
+        assert!((as_fraction - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]

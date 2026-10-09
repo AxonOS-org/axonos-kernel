@@ -22,6 +22,12 @@
   plus the handles' `Send`/`Sync` impls. The crate docs, both READMEs and the
   badge now say so; the drop path is covered by tests and Miri, not by a Kani
   harness.
+- **`axonos-intent` documented a withdrawn confidence rule.** It said
+  `Confidence` is `v / 65_536` with exactly 1.0 unrepresentable "per
+  RFC-0006", and a test asserted it. RFC-0006 was corrected on 2026-08-11 to
+  `v / u16::MAX`, with 1.0 representable as `0xFFFF`, which is what
+  `axonos-sdk` implements. The wire bytes never differed; the documented
+  meaning of `0xFFFF` did. The docs and the test now follow the RFC.
 - The firmware README still dated its Phase-1 measurement "Q2 2026", a
   quarter that has ended; the date is removed, as it already was from the
   firmware source.
