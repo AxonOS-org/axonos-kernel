@@ -4,7 +4,7 @@
 
 ### The verifiable substrate underneath a brain–computer interface.
 
-<sub>seven crates · formally verified with Kani · zero unsafe outside two documented operations</sub>
+<sub>seven crates · properties checked with Kani · unsafe confined to the SPSC ring, three documented operations</sub>
 
 <br/>
 
@@ -13,7 +13,7 @@
 [![Kernel ABI](https://img.shields.io/badge/Kernel%20ABI-v1-0a4a8f?style=flat-square)](#abi-compatibility-with-axonos-sdk)
 [![Rust](https://img.shields.io/badge/Rust-no__std-CE422B?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Verified](https://img.shields.io/badge/Verified-Kani%20BMC-0d7a5f?style=flat-square)](https://github.com/model-checking/kani)
-[![Unsafe](https://img.shields.io/badge/Unsafe-forbidden%20outside%202%20ops-0d7a5f?style=flat-square)](#engineering-principles)
+[![Unsafe](https://img.shields.io/badge/Unsafe-SPSC%20ring%20only-0d7a5f?style=flat-square)](#engineering-principles)
 [![License](https://img.shields.io/badge/License-Apache--2.0%20OR%20MIT-475569?style=flat-square)](#license)
 [![MSRV](https://img.shields.io/badge/MSRV-1.75-475569?style=flat-square)](https://blog.rust-lang.org/2023/12/28/Rust-1.75.0.html)
 [![Target](https://img.shields.io/badge/Target-Cortex--M4F%20%2F%20M33-475569?style=flat-square)](https://doc.rust-lang.org/rustc/platform-support/thumbv7em-none-eabi.html)
@@ -131,7 +131,7 @@ and its specific dependencies.
 git clone https://github.com/AxonOS-org/axonos-kernel
 cd axonos-kernel
 cargo test --workspace
-# → 96 tests passed.
+# → 97 tests passed.
 ```
 
 ### Check the proofs rather than the count
@@ -294,9 +294,10 @@ every artifact:
 1. **No claim above its evidence level.** Measurements are reported as
    measurements, derivations as derivations, predictions as predictions.
 2. **No `unsafe` in reviewable modules.** Where unsafe is unavoidable
-   (`axonos-spsc`'s payload path), it is exactly two operations, each
-   guarded by a Kani-verified invariant. Everywhere else,
-   `#![forbid(unsafe_code)]`.
+   (`axonos-spsc`'s ring), it is three operations — slot write, slot read,
+   and the drop of unread slots — plus the handles' `Send`/`Sync` impls; the
+   first two are guarded by Kani-checked invariants for a four-slot ring.
+   Everywhere else, `#![forbid(unsafe_code)]`.
 3. **No heap allocation on the hot path.** Static buffers, const-generic
    sizing, fixed-point arithmetic.
 4. **No silent recovery from inconsistent state.** Errors surface as

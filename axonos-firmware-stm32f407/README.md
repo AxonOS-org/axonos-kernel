@@ -133,7 +133,7 @@ It is verified only at the build level: `cargo build --release` must
 succeed against `thumbv7em-none-eabihf`. The CI matrix runs this build
 on every push.
 
-**Phase-1 measurement (Q2 2026)** will exercise this firmware on a
+**Phase-1 measurement** (no date is given; one would be invented) will exercise this firmware on a
 GPIO-instrumented reference fixture with falsification thresholds set
 in advance per the published preprint:
 

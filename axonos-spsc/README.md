@@ -7,8 +7,9 @@
 A single-producer, single-consumer ring buffer for AxonOS.
 
 `#![no_std]`. No heap. Wait-free. Statically sized.
-The unsafe surface is **exactly two operations**, each guarded by a Kani-verified
-sequence-number invariant.
+The unsafe surface is **three operations** — the slot write, the slot read, and
+the in-place drop of unread values — plus the `Send`/`Sync` impls. The first two
+are guarded by head/tail invariants that Kani checks for a four-slot ring.
 
 ## Why this crate exists
 
@@ -46,20 +47,25 @@ assert_eq!(consumer.try_pop(), Ok(42));
 ## Design contract
 
 - `#![no_std]`, no heap, statically sized via const generic `N`.
-- `N` must be a power of two and at least 2. Checked by `debug_assert!`
-  at construction.
+- `N` must be a power of two and at least 2. Checked **at compile time**
+  (since 0.4.3; before that, only by `debug_assert!`): a buffer with an
+  invalid `N` does not build. Soundness depends on it once a counter wraps.
 - At most one `Producer` and one `Consumer` exist per buffer, enforced by
   `split()` returning `Option` and consuming the buffer's unique split flag.
 - `try_push` is wait-free: completes in a bounded number of instructions
   regardless of any concurrent consumer activity.
 - `try_pop` is wait-free under the symmetric condition.
 - FIFO order is preserved across pushes; sequence-number arithmetic
-  using `usize::wrapping_*` is sound for any realistic buffer size.
+  using `usize::wrapping_*` stays sound across counter wrap-around because
+  `N` is a power of two.
+- On `Err(Full)`, `try_push` drops the value it was given: `Full` carries
+  no payload.
 
-The unsafe surface is two operations:
+The unsafe surface is three operations:
 
 1. `(*slot).write(value)` inside `Producer::try_push`,
-2. `(*slot).assume_init_read()` inside `Consumer::try_pop`.
+2. `(*slot).assume_init_read()` inside `Consumer::try_pop`,
+3. `drop_in_place` of each unread slot inside `Drop for SpscBuffer`.
 
 Each is preceded by an arithmetic check that the slot is in the safe
 range (between `tail` and `head`) and followed by a Release-store on the

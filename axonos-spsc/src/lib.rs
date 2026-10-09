@@ -16,11 +16,13 @@
 //! - The producer never observes a non-empty buffer as full unless it is
 //!   genuinely full; the consumer never observes a non-full buffer as empty
 //!   unless it is genuinely empty. (Linearisable, FIFO.)
-//! - The unsafe surface is **exactly two operations**: a single
-//!   [`core::ptr::write`] of a cell on `try_push` and a single
-//!   [`core::ptr::read`] of a cell on `try_pop`. Both are guarded by
-//!   sequence-number invariants verified by Kani harnesses (see
-//!   `kani-proofs/`).
+//! - The unsafe surface is **three operations** and the `Send`/`Sync`
+//!   impls that let the handles cross threads: a single write of a cell on
+//!   `try_push`, a single read of a cell on `try_pop`, and the in-place drop
+//!   of unread values when the buffer is dropped. The first two are guarded
+//!   by head/tail invariants that the Kani harnesses in `kani-proofs/` check
+//!   for a four-slot ring; the drop path is covered by unit tests and Miri,
+//!   not by a harness.
 //!
 //! ## Memory model
 //!
@@ -66,8 +68,14 @@ pub struct Empty;
 
 /// Owning storage for an SPSC ring of `N` slots holding values of type `T`.
 ///
-/// `N` must be a power of two and at least 2. This is checked at compile time
-/// via a `const` assertion in [`SpscBuffer::new`].
+/// `N` must be a power of two and at least 2. This is checked at compile time:
+/// [`SpscBuffer::new`] evaluates a `const` assertion, so a buffer with an
+/// invalid `N` does not build.
+///
+/// ```compile_fail
+/// // Three is not a power of two: this fails to compile.
+/// let _ = axonos_spsc::SpscBuffer::<u32, 3>::new();
+/// ```
 ///
 /// # Layout
 ///
@@ -100,25 +108,33 @@ pub struct SpscBuffer<T, const N: usize> {
 unsafe impl<T: Send, const N: usize> Sync for SpscBuffer<T, N> {}
 
 impl<T, const N: usize> SpscBuffer<T, N> {
+    /// Compile-time capacity check, evaluated once per `N` when
+    /// [`SpscBuffer::new`] is instantiated.
+    ///
+    /// Soundness depends on it, not only correctness: the counters are
+    /// unbounded `usize` values indexed as `counter % N`, and when a counter
+    /// wraps at `usize::MAX` (after 2^32 operations on a 32-bit target) any
+    /// `N` consecutive counters map to `N` distinct slots only if `N` divides
+    /// 2^bits — that is, only if `N` is a power of two. With `N = 3` on a
+    /// 32-bit target, `u32::MAX % 3 == 0 % 3`, so a value can be overwritten
+    /// before it is read and another read twice. Until 0.4.3 this was a
+    /// `debug_assert!`, so a release build with such an `N` compiled.
+    const CAPACITY_IS_VALID: () = assert!(
+        N >= 2 && N.is_power_of_two(),
+        "axonos-spsc: capacity N must be a power of two and at least 2"
+    );
+
     /// Create a new, empty SPSC buffer.
     ///
     /// # Invariants
     ///
-    /// `N` must be a power of two and at least 2. This is verified by
-    /// `debug_assert!` at construction; in `--release` builds with known `N`
-    /// the compiler is expected to fold the check.
-    ///
-    /// # Panics
-    ///
-    /// In debug builds, panics if `N < 2` or `N` is not a power of two.
-    /// (Production code should pin `N` at compile time to a valid value.)
+    /// `N` must be a power of two and at least 2, checked at compile time
+    /// (see the type-level documentation).
     #[must_use]
     pub fn new() -> Self {
-        debug_assert!(N >= 2, "axonos-spsc: capacity must be at least 2");
-        debug_assert!(
-            N.is_power_of_two(),
-            "axonos-spsc: capacity must be a power of two"
-        );
+        // Forces evaluation of the compile-time capacity check for this `N`.
+        #[allow(clippy::let_unit_value)]
+        let () = Self::CAPACITY_IS_VALID;
 
         Self {
             slots: core::array::from_fn(|_| UnsafeCell::new(MaybeUninit::uninit())),
@@ -207,12 +223,15 @@ impl<T, const N: usize> Producer<'_, T, N> {
     /// Try to push `value` into the buffer.
     ///
     /// Wait-free: this method completes in bounded steps regardless of any
-    /// concurrent consumer activity (proven by Kani harness K2).
+    /// concurrent consumer activity (proven by Kani harness K2 for a
+    /// four-slot ring).
     ///
     /// # Errors
     ///
-    /// Returns `Err(Full)` if the buffer is full. The `value` is returned
-    /// untouched in the error variant so the caller can retry without copy.
+    /// Returns `Err(Full)` if the buffer is full. **The `value` is dropped**
+    /// in that case: `Full` carries no payload. A caller that must not lose
+    /// a value checks capacity first, or keeps its own copy until the push
+    /// succeeds.
     pub fn try_push(&mut self, value: T) -> Result<(), Full> {
         // Acquire-load tail to establish happens-before with the consumer's
         // Release-store of tail (which signals the slot has been freed).
@@ -223,8 +242,9 @@ impl<T, const N: usize> Producer<'_, T, N> {
 
         // Compute occupancy. head and tail are unbounded usize counters;
         // wrapping_sub gives a correct difference even across wrap-around
-        // because the buffer is bounded (N <= usize::MAX / 2 by the
-        // is_power_of_two and >= 2 guards).
+        // because occupancy never exceeds N, and N is a power of two
+        // (checked at compile time by CAPACITY_IS_VALID), so `counter % N`
+        // stays continuous when a counter wraps.
         let occupancy = head.wrapping_sub(tail);
         if occupancy >= N {
             return Err(Full);

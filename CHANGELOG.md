@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.3] — 2026-10-09
+
+### Fixed
+- **The SPSC capacity check was documented as compile-time and was not.**
+  The crate docs said a power-of-two capacity was "enforced at compile time";
+  `SpscBuffer::new` only ran `debug_assert!`. In a release build an `N` that
+  is not a power of two compiled, and that is a soundness bug, not a style
+  one: the counters wrap at `usize::MAX` (after 2^32 operations on the 32-bit
+  Cortex-M targets), and only a power-of-two `N` keeps every window of `N`
+  consecutive counters on `N` distinct slots. With `N = 3`, `u32::MAX % 3`
+  equals `0 % 3`, so a value could be overwritten unread and another read
+  twice. The check is now a `const` assertion evaluated per `N`, and a
+  `compile_fail` doctest keeps it one. No shipped configuration used an
+  invalid `N`; every in-tree buffer is 2, 4 or 8.
+- **`try_push` said it returned the rejected value.** It does not: `Full`
+  carries no payload and the value is dropped. The documentation now says so.
+  Returning the value would change the API and is left for a minor release.
+- **The unsafe surface was counted as two operations.** It is three — the
+  slot write, the slot read, and the in-place drop of unread slots in `Drop` —
+  plus the handles' `Send`/`Sync` impls. The crate docs, both READMEs and the
+  badge now say so; the drop path is covered by tests and Miri, not by a Kani
+  harness.
+- The firmware README still dated its Phase-1 measurement "Q2 2026", a
+  quarter that has ended; the date is removed, as it already was from the
+  firmware source.
+
 ## [0.4.2] — 2026-08-20
 
 ### Fixed
