@@ -1,0 +1,83 @@
+{
+  "version": "v1.0.0",
+  "entity": {
+    "type": "individual",
+    "role": "owner",
+    "name": "Denis Yermakou",
+    "email": "connect@axonos.org",
+    "description": "Denis Yermakou maintains AxonOS, an open-source real-time operating layer for brain-computer interfaces written in Rust, and dy-wcet, a worst-case response-time analysis library for real-time task sets. Both are dual-licensed Apache-2.0 OR MIT. Every public claim the project makes carries an evidence level, from machine-checked proof to measurement on reference hardware with a published trace; the second level is claimed for nothing yet, and figures that could not be traced to an artefact have been withdrawn in public.",
+    "webpageUrl": {
+      "url": "https://github.com/AxonOS-org"
+    }
+  },
+  "projects": [
+    {
+      "guid": "axonos-kernel",
+      "name": "AxonOS kernel",
+      "description": "The kernel-side foundation of AxonOS: seven Rust crates that compose into the real-time scheduling, capability isolation, time, inter-process communication and wire-format layer a brain-computer interface signal pipeline needs to meet hard deadlines on a Cortex-M microcontroller, plus a reference firmware crate for the STM32F407. No heap and no allocator on the hot path. Five crates carry Kani bounded-model-checking harnesses, 30 in all, and unsafe code is confined to three documented operations of the single-producer single-consumer ring and its handles' Send and Sync impls; every other module forbids it. no_std builds are checked in CI against thumbv7em and thumbv8m.main, not asserted. Funding pays for a year of development and for the first instrumented timing measurement on reference hardware, published with its trace.",
+      "webpageUrl": {
+        "url": "https://github.com/AxonOS-org/axonos-kernel"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/AxonOS-org/axonos-kernel"
+      },
+      "licenses": ["spdx:Apache-2.0", "spdx:MIT"],
+      "tags": [
+        "rust",
+        "embedded",
+        "real-time",
+        "microkernel",
+        "brain-computer-interface",
+        "formal-verification",
+        "no-std",
+        "neurotechnology"
+      ]
+    },
+    {
+      "guid": "dy-wcet",
+      "name": "dy-wcet",
+      "description": "Worst-case response time for a fixed-priority task set, with release jitter, blocking and optimal priority assignment, computed in exact integer arithmetic that refuses rather than rounds. No floating point anywhere in the source, tests or proofs, zero dependencies, no_std with no allocator, so the same calls admit or refuse a task at run time on the device. When it cannot justify a figure it says why, through six named refusals, overflow among them. Eight Kani harnesses run on every push, results are cross-checked against a second computation of the busy period and against a simulated scheduler, and the examples in the README are compiled as tests. Funding pays for a year of maintenance, wider analysis models and an external review of the arithmetic.",
+      "webpageUrl": {
+        "url": "https://github.com/DYResearch/dy-wcet",
+        "wellKnown": "https://github.com/DYResearch/dy-wcet/blob/main/.well-known/funding-manifest-urls"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/DYResearch/dy-wcet",
+        "wellKnown": "https://github.com/DYResearch/dy-wcet/blob/main/.well-known/funding-manifest-urls"
+      },
+      "licenses": ["spdx:Apache-2.0", "spdx:MIT"],
+      "tags": [
+        "rust",
+        "embedded",
+        "real-time",
+        "schedulability",
+        "timing-analysis",
+        "formal-verification",
+        "no-std"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "bank-transfer",
+        "type": "bank",
+        "address": "",
+        "description": "Bank transfer to the maintainer's account. Details are provided on acceptance."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "annual-grant",
+        "status": "active",
+        "name": "Annual development grant",
+        "description": "A year of development, measurement and external review across both projects: the first instrumented timing measurement of the AxonOS kernel on reference hardware, published with its trace, and continued maintenance of dy-wcet.",
+        "amount": 100000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": ["bank-transfer"]
+      }
+    ],
+    "history": []
+  }
+}
